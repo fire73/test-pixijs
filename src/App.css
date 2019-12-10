@@ -2,6 +2,26 @@
   text-align: center;
 }
 
+.mapElement {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  float: left;
+  box-shadow: inset 0px 0px 2px 0px;
+}
+.mapElementBlock {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  float: left;
+  background-color: #282c34;
+  box-shadow: inset 0px 0px 2px 0px;
+}
+
+.mapRow {
+  height: 30px;
+}
+
 .App-logo {
   height: 40vmin;
   pointer-events: none;
