@@ -4,22 +4,56 @@
 
 .mapElement {
   position: relative;
-  width: 30px;
-  height: 30px;
+  width: 50px;
+  height: 50px;
   float: left;
   box-shadow: inset 0px 0px 2px 0px;
+  font-size: 10px;
+  cursor: pointer;
 }
 .mapElementBlock {
+  cursor: pointer;
+  font-size: 10px;
   position: relative;
-  width: 30px;
-  height: 30px;
+  width: 50px;
+  height: 50px;
   float: left;
-  background-color: #282c34;
+  background-color: darkgrey;
+  box-shadow: inset 0px 0px 2px 0px;
+}
+.mapElementStart {
+  cursor: pointer;
+  font-size: 10px;
+  position: relative;
+  width: 50px;
+  height: 50px;
+  float: left;
+  background-color: green;
+  box-shadow: inset 0px 0px 2px 0px;
+}
+.mapElementEnd {
+  cursor: pointer;
+  font-size: 10px;
+  position: relative;
+  width: 50px;
+  height: 50px;
+  float: left;
+  background-color: maroon;
+  box-shadow: inset 0px 0px 2px 0px;
+}
+.mapElementWay {
+  cursor: pointer;
+  font-size: 10px;
+  position: relative;
+  width: 50px;
+  height: 50px;
+  float: left;
+  background-color:mediumturquoise;
   box-shadow: inset 0px 0px 2px 0px;
 }
 
 .mapRow {
-  height: 30px;
+  height: 50px;
 }
 
 .App-logo {
