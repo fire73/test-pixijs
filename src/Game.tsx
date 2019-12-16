@@ -9,16 +9,27 @@ export class Game extends React.Component {
   // }
 
   componentDidMount() {
-    const app = new PIXI.Application({
+    const canvas = document.getElementById('canvasGame');
+    // const app = new PIXI.Application({
+    //   width: 700,
+    //   height: 700,
+    //   // backgroundColor: 0xcccccc,
+    //   transparent: true
+    // });
+    const renderer = new PIXI.Renderer({
+      view: canvas as HTMLCanvasElement,
       width: 700,
       height: 700,
-      // backgroundColor: 0xcccccc,
+      resolution: window.devicePixelRatio,
+      autoDensity: true,
       transparent: true
     });
 
+    const stage = new PIXI.Container();
+
     // The application will create a canvas element for you that you
     // can then insert into the DOM.
-    document.body.appendChild(app.view);
+    // document.body.appendChild(app.view);
 
     // const graphics = new PIXI.Graphics();
     // graphics.lineStyle(2, 0x000000, 1);
@@ -53,7 +64,7 @@ export class Game extends React.Component {
         box.on('pointerdown', () => {
           console.log(`clicked`, box.name, box.x, box.y);
         });
-        app.stage.addChild(box);
+        stage.addChild(box);
         line.push(0);
         freeMap.push({
           coords: [j, i]
@@ -80,7 +91,7 @@ export class Game extends React.Component {
         chaos = !chaos;
       });
       balls.push(ball)
-      app.stage.addChild(ball);
+      stage.addChild(ball);
     }
     // console.log({
     //   freeMap
@@ -100,23 +111,32 @@ export class Game extends React.Component {
       map[point.coords[1]][point.coords[0]] = -(textureId) - 1;
     }
 
-    app.ticker.add(() => {
-      if(chaos) {
-        balls.forEach(ball => {
-          ball.x = _.random(1) === 1 ? ball.x - _.random(2) : ball.x + _.random(2);
-          ball.y = _.random(1) === 1 ? ball.y - _.random(2) : ball.y + _.random(2);
-        })
-      }
-    });
+    // app.ticker.add(() => {
+    //   if(chaos) {
+    //     balls.forEach(ball => {
+    //       ball.x = _.random(1) === 1 ? ball.x - _.random(2) : ball.x + _.random(2);
+    //       ball.y = _.random(1) === 1 ? ball.y - _.random(2) : ball.y + _.random(2);
+    //     })
+    //   }
+    // });
 
     // createBall(100, 150, 0);
-    console.log('map', map)
+    console.log('map', map);
+
+    const ticker = new PIXI.Ticker();
+    ticker.add(animate);
+    ticker.start();
+
+    function animate() {
+      renderer.render(stage)
+    }
 
   }
 
   render() {
     return (
       <div className="Game">
+        <canvas id="canvasGame"></canvas>
       </div>
     );
   }
