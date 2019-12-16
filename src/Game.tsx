@@ -28,13 +28,16 @@ export class Game extends React.Component {
 
     // const renderer = PIXI.autoDetectRenderer();
     // const texture = graphics.
+    const mapSize = 10;
+    const mapW = mapSize;
+    const mapH = mapSize;
 
     const map: number[][] = [];
     const freeMap: { coords: number[] }[] = [];
 
-    for (let i = 0; i < 10; i += 1) {
+    for (let i = 0; i < mapW; i += 1) {
       const line: number[] = [];
-      for (let j = 0; j < 10; j += 1) {
+      for (let j = 0; j < mapH; j += 1) {
         // var texture = PIXI.generateTexture(graphics);
         // const box = new PIXI.Sprite();
         const box = new PIXI.Sprite(PIXI.Texture.WHITE);
@@ -70,23 +73,27 @@ export class Game extends React.Component {
       ball.height = 45;
       app.stage.addChild(ball);
     }
-    console.log({
-      freeMap
-    });
+    // console.log({
+    //   freeMap
+    // });
     // map.forEach((line, key1) => {
     //   line.forEach((item, key2) => {
 
     //   });
     // });
-    const countStartBalls = 50;
+    const countStartBalls = 5;
     for (let i = 0; i < countStartBalls; i += 1) {
-      const index = _.random(100-i);
+      const index = _.random((mapW*mapH)-i-1);
       const point = freeMap[index];
+      const textureId = _.random(4);
       freeMap.splice(index, 1);
-      console.log(index);
-      console.log({ freeMap });
-      createBall(point.coords[0] * 50, point.coords[1] * 50, _.random(4));
+      createBall(point.coords[0] * 50, point.coords[1] * 50, textureId);
+      map[point.coords[0]][point.coords[1]] = -(textureId) - 1;
     }
+
+    console.log({
+      map
+    })
 
   }
 
