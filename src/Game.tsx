@@ -41,8 +41,8 @@ export class Game extends React.Component {
         // var texture = PIXI.generateTexture(graphics);
         // const box = new PIXI.Sprite();
         const box = new PIXI.Sprite(PIXI.Texture.WHITE);
-        box.x = i * 50;
-        box.y = j * 50;
+        box.x = j * 50;
+        box.y = i * 50;
         box.tint = 0xCCCCCC;
         box.width = 45;
         box.height = 45;
@@ -56,7 +56,7 @@ export class Game extends React.Component {
         app.stage.addChild(box);
         line.push(0);
         freeMap.push({
-          coords: [i, j]
+          coords: [j, i]
         })
       }
       map.push(line);
@@ -64,13 +64,22 @@ export class Game extends React.Component {
     const ballsTexture = [
       '13', '11', '04', '19', '06'
     ];
-
-    function createBall(x: number, y: number, textureId: number) {
+    let chaos = false;
+    const balls: PIXI.Sprite[] = [];
+    function createBall(x: number, y: number, textureId: number, point: number[]) {
       const ball = PIXI.Sprite.from(`coloredspheres/sphere-${ballsTexture[textureId]}.png`);
       ball.x = x;
       ball.y = y;
       ball.width = 45;
       ball.height = 45;
+      ball.buttonMode = true;
+      ball.interactive = true;
+      ball.name = `${point[0]}_${point[1]}`;
+      ball.on('pointerdown', () => {
+        console.log(`clicked ball`, ball.name);
+        chaos = !chaos;
+      });
+      balls.push(ball)
       app.stage.addChild(ball);
     }
     // console.log({
@@ -83,17 +92,25 @@ export class Game extends React.Component {
     // });
     const countStartBalls = 5;
     for (let i = 0; i < countStartBalls; i += 1) {
-      const index = _.random((mapW*mapH)-i-1);
+      const index = _.random((mapW * mapH) - i - 1);
       const point = freeMap[index];
       const textureId = _.random(4);
       freeMap.splice(index, 1);
-      createBall(point.coords[0] * 50, point.coords[1] * 50, textureId);
-      map[point.coords[0]][point.coords[1]] = -(textureId) - 1;
+      createBall(point.coords[0] * 50, point.coords[1] * 50, textureId, point.coords);
+      map[point.coords[1]][point.coords[0]] = -(textureId) - 1;
     }
 
-    console.log({
-      map
-    })
+    app.ticker.add(() => {
+      if(chaos) {
+        balls.forEach(ball => {
+          ball.x = _.random(1) === 1 ? ball.x - _.random(2) : ball.x + _.random(2);
+          ball.y = _.random(1) === 1 ? ball.y - _.random(2) : ball.y + _.random(2);
+        })
+      }
+    });
+
+    // createBall(100, 150, 0);
+    console.log('map', map)
 
   }
 

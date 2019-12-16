@@ -58,6 +58,7 @@ class App extends React.Component {
     let numberPoint = 1;
     for (let it = 0; it < maxLen; it += 1) {
       const newLastPoints: number[][] = [];
+      // eslint-disable-next-line
       lastPoints.forEach(p => {
         if (
           p[0] - 1 > -1 &&
