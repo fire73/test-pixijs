@@ -137,16 +137,17 @@ export class Game extends React.Component {
 
     // const renderer = PIXI.autoDetectRenderer();
     // const texture = graphics.
-    const mapSize = 10;
+    const mapSize = 14;
     const mapW = mapSize;
     const mapH = mapSize;
 
     const balls: PIXI.Sprite[] = [];
     let activeBall: number[] = [];
+    let selectedBall = false;
 
     const map: number[][] = [];
     const freeMap: { coords: number[] }[] = [];
-
+    const boxes: PIXI.Sprite[] = [];
     for (let i = 0; i < mapW; i += 1) {
       const line: number[] = [];
       for (let j = 0; j < mapH; j += 1) {
@@ -166,12 +167,20 @@ export class Game extends React.Component {
         box.on('pointerdown', async () => {
           console.log(`clicked`, box.name, box.x, box.y);
           if (activeBall.length) {
-            const pointBox = [box.x/50, box.y/50];
+            const pointBox = [box.x / 50, box.y / 50];
             const foundBall = balls.find(b => b.x === activeBall[0] * 50 && b.y === activeBall[1] * 50);
             if (!foundBall) {
               return;
             }
-            const pointBall = [foundBall.x/50, foundBall.y/50];
+            const foundBox = boxes.find(b => b.x === foundBall.x && b.y === foundBall.y);
+            console.log({
+              foundBox
+            })
+            if (foundBox) {
+              // foundBox.
+              foundBox.tint = 0xCCCCCC;
+            }
+            const pointBall = [foundBall.x / 50, foundBall.y / 50];
 
             const mapping = this.methodLeeMapping(map, mapSize, 100, pointBall.reverse());
             const way = this.generatePath(mapping, pointBox.reverse(), 100, mapSize);
@@ -184,7 +193,7 @@ export class Game extends React.Component {
               wayL: way.length
             });
 
-            if(way.length === 1) {
+            if (way.length === 1) {
               activeBall = [];
               console.log('NO WAY');
               return;
@@ -200,20 +209,20 @@ export class Game extends React.Component {
               const tickerWay = new PIXI.Ticker();
               await new Promise((r) => {
                 tickerWay.add(() => {
-                  if(foundBall.x === x && foundBall.y === y) {
+                  if (foundBall.x === x && foundBall.y === y) {
                     // clearTimeout(timeout);
                     r();
                   }
-                  if(foundBall.x < x) {
+                  if (foundBall.x < x) {
                     foundBall.x += speed;
                   }
-                  if(foundBall.x > x) {
+                  if (foundBall.x > x) {
                     foundBall.x -= speed;
                   }
-                  if(foundBall.y < y) {
+                  if (foundBall.y < y) {
                     foundBall.y += speed;
                   }
-                  if(foundBall.y > y) {
+                  if (foundBall.y > y) {
                     foundBall.y -= speed;
                   }
                 })
@@ -223,7 +232,7 @@ export class Game extends React.Component {
               tickerWay.destroy();
             }
             map[pointBall[0]][pointBall[1]] = 0;
-            map[pointBox[0]][pointBox[1]] = (-activeBall[2])-1;
+            map[pointBox[0]][pointBox[1]] = (-activeBall[2]) - 1;
             // if (!foundBall) {
             //   return;
             // }
@@ -236,6 +245,7 @@ export class Game extends React.Component {
           // console.log(balls.find(b => b.x === ))
         });
         stage.addChild(box);
+        boxes.push(box);
         line.push(0);
         freeMap.push({
           coords: [j, i]
@@ -264,8 +274,53 @@ export class Game extends React.Component {
         // if (!foundBall) {
         //   return;
         // }
+
+        if (selectedBall) {
+          const foundBox = boxes.find(b => b.x === activeBall[0] * 50 && b.y === activeBall[1] * 50);
+          console.log({
+            foundBox
+          })
+          if (foundBox) {
+            // foundBox.
+            foundBox.tint = 0xCCCCCC;
+          }
+        }
+
         activeBall = [ball.x / 50, ball.y / 50, textureId];
+
         console.log('activeBall', activeBall);
+        selectedBall = true;
+
+        const foundBox = boxes.find(b => b.x === ball.x && b.y === ball.y);
+        console.log({
+          foundBox
+        })
+        if (foundBox) {
+          // foundBox.
+          foundBox.tint = 0x48D1CC;
+        }
+        // const tickerBall = new PIXI.Ticker();
+        // const startBall = {
+        //   x: ball.x,
+        //   y: ball.y
+        // }
+        // tickerBall.add(() => {
+        //   if (!selectedBall) {
+
+        //   }
+        //   ball.x = _.random(1) === 1 ? ball.x - _.random(2) : ball.x + _.random(2);
+        //   ball.y = _.random(1) === 1 ? ball.y - _.random(2) : ball.y + _.random(2);
+        // });
+        // tickerBall.start();
+        // const timeout = setTimeout(() => {
+        //   tickerBall.stop();
+        //   tickerBall.destroy();
+        //   ball.x = startBall.x;
+        //   ball.y = startBall.y;
+        //   selectedBall = false;
+        //   activeBall = [];
+        //   clearTimeout(timeout);
+        // }, 3000);
       });
       balls.push(ball)
       stage.addChild(ball);
@@ -278,7 +333,7 @@ export class Game extends React.Component {
 
     //   });
     // });
-    const countStartBalls = 25;
+    const countStartBalls = 70;
     for (let i = 0; i < countStartBalls; i += 1) {
       const index = _.random((mapW * mapH) - i - 1);
       const point = freeMap[index];
@@ -309,7 +364,7 @@ export class Game extends React.Component {
     ticker.start();
 
     function animate() {
-      renderer.render(stage)
+      renderer.render(stage);
     }
 
   }
