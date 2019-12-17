@@ -8,6 +8,104 @@ export class Game extends React.Component {
   //   super(props);
   // }
 
+  methodLeeMapping(mapLocation: number[][], sizeMap: number, maxLen: number, startPoint: number[]) {
+    const mapWayS: number[][] = [];
+    for (let i = 0; i < sizeMap; i += 1) {
+      const row = [];
+      for (let j = 0; j < sizeMap; j += 1) {
+        row.push(255);
+      }
+      mapWayS.push(row);
+    }
+
+    // опеределим максимальную длину пути
+
+    // берем начальную точку и от неё находим возможные варианты, сохраняем координаты возможных вариантов и
+    const sp = startPoint;
+
+    mapWayS[sp[0]][sp[1]] = 0;
+    let lastPoints = [[sp[0], sp[1]]];
+    let numberPoint = 1;
+    for (let it = 0; it < maxLen; it += 1) {
+      const newLastPoints: number[][] = [];
+      // eslint-disable-next-line
+      lastPoints.forEach(p => {
+        if (
+          p[0] - 1 > -1 &&
+          mapWayS[p[0] - 1][p[1]] === 255 &&
+          mapLocation[p[0] - 1][p[1]] >= 0
+        ) {
+          newLastPoints.push([p[0] - 1, p[1]]);
+          mapWayS[p[0] - 1][p[1]] = numberPoint;
+        }
+        if (
+          p[0] + 1 < sizeMap &&
+          mapWayS[p[0] + 1][p[1]] === 255 &&
+          mapLocation[p[0] + 1][p[1]] >= 0
+        ) {
+          newLastPoints.push([p[0] + 1, p[1]]);
+          mapWayS[p[0] + 1][p[1]] = numberPoint;
+        }
+        if (
+          p[1] - 1 > -1 &&
+          mapWayS[p[0]][p[1] - 1] === 255 &&
+          mapLocation[p[0]][p[1] - 1] >= 0
+        ) {
+          newLastPoints.push([p[0], p[1] - 1]);
+          mapWayS[p[0]][p[1] - 1] = numberPoint;
+        }
+        if (
+          p[1] + 1 < sizeMap &&
+          mapWayS[p[0]][p[1] + 1] === 255 &&
+          mapLocation[p[0]][p[1] + 1] >= 0
+        ) {
+          newLastPoints.push([p[0], p[1] + 1]);
+          mapWayS[p[0]][p[1] + 1] = numberPoint;
+        }
+      });
+      numberPoint += 1;
+      lastPoints = newLastPoints;
+    }
+    this.setState({
+      mapWayS
+    })
+    return mapWayS;
+  }
+
+  generatePath = (mapWayS: number[][], endPoint: number[], maxLen: number, sizeMap: number): number[][] => {
+    const way: number[][] = [
+      [endPoint[0], endPoint[1]]
+    ];
+    const ep = endPoint;
+    // const mapWayS = this.state.mapWayS;
+
+    let lpw = [ep[0], ep[1]];
+    for (let i = 0; i < maxLen; i += 1) {
+      const nowValue = mapWayS[lpw[0]][lpw[1]];
+      if (lpw[0] - 1 > -1 && mapWayS[lpw[0] - 1][lpw[1]] < nowValue) {
+        lpw = [lpw[0] - 1, lpw[1]];
+        way.push(lpw);
+        continue;
+      }
+      if (lpw[0] + 1 < sizeMap && mapWayS[lpw[0] + 1][lpw[1]] < nowValue) {
+        lpw = [lpw[0] + 1, lpw[1]];
+        way.push(lpw);
+        continue;
+      }
+      if (lpw[1] + 1 < sizeMap && mapWayS[lpw[0]][lpw[1] + 1] < nowValue) {
+        lpw = [lpw[0], lpw[1] + 1];
+        way.push(lpw);
+        continue;
+      }
+      if (lpw[1] - 1 > -1 && mapWayS[lpw[0]][lpw[1] - 1] < nowValue) {
+        lpw = [lpw[0], lpw[1] - 1];
+        way.push(lpw);
+        continue;
+      }
+    }
+    return way.map(el => el.reverse()).reverse();
+  }
+
   componentDidMount() {
     const canvas = document.getElementById('canvasGame');
     // const app = new PIXI.Application({
@@ -64,17 +162,75 @@ export class Game extends React.Component {
         box.interactive = true;
         box.name = `${j}_${i}`;
         // box.position
-        box.on('pointerdown', () => {
+        // eslint-disable-next-line
+        box.on('pointerdown', async () => {
           console.log(`clicked`, box.name, box.x, box.y);
           if (activeBall.length) {
+            const pointBox = [box.x/50, box.y/50];
             const foundBall = balls.find(b => b.x === activeBall[0] * 50 && b.y === activeBall[1] * 50);
             if (!foundBall) {
               return;
             }
-            foundBall.x = box.x;
-            foundBall.y = box.y;
-            map[activeBall[1]][activeBall[0]] = 0;
-            map[box.y/50][box.x/50] = (-activeBall[2])-1;
+            const pointBall = [foundBall.x/50, foundBall.y/50];
+
+            const mapping = this.methodLeeMapping(map, mapSize, 100, pointBall.reverse());
+            const way = this.generatePath(mapping, pointBox.reverse(), 100, mapSize);
+
+            console.log({
+              pointBox,
+              pointBall,
+              mapping,
+              way,
+              wayL: way.length
+            });
+
+            if(way.length === 1) {
+              activeBall = [];
+              console.log('NO WAY');
+              return;
+            }
+
+            const speed = 10;
+
+            way.splice(0, 1);
+            for (const wayEl of way) {
+              // wayEl[0]
+              const x = wayEl[0] * 50;
+              const y = wayEl[1] * 50;
+              const tickerWay = new PIXI.Ticker();
+              await new Promise((r) => {
+                tickerWay.add(() => {
+                  if(foundBall.x === x && foundBall.y === y) {
+                    // clearTimeout(timeout);
+                    r();
+                  }
+                  if(foundBall.x < x) {
+                    foundBall.x += speed;
+                  }
+                  if(foundBall.x > x) {
+                    foundBall.x -= speed;
+                  }
+                  if(foundBall.y < y) {
+                    foundBall.y += speed;
+                  }
+                  if(foundBall.y > y) {
+                    foundBall.y -= speed;
+                  }
+                })
+                tickerWay.start();
+              });
+              tickerWay.stop();
+              tickerWay.destroy();
+            }
+            map[pointBall[0]][pointBall[1]] = 0;
+            map[pointBox[0]][pointBox[1]] = (-activeBall[2])-1;
+            // if (!foundBall) {
+            //   return;
+            // }
+            // foundBall.x = box.x;
+            // foundBall.y = box.y;
+            // map[activeBall[1]][activeBall[0]] = 0;
+            // map[point[1]][point[0]] = (-activeBall[2])-1;
             console.log('map', map)
           }
           // console.log(balls.find(b => b.x === ))
@@ -122,7 +278,7 @@ export class Game extends React.Component {
 
     //   });
     // });
-    const countStartBalls = 5;
+    const countStartBalls = 25;
     for (let i = 0; i < countStartBalls; i += 1) {
       const index = _.random((mapW * mapH) - i - 1);
       const point = freeMap[index];
