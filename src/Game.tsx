@@ -137,8 +137,12 @@ export class Game extends React.Component {
 
     // const renderer = PIXI.autoDetectRenderer();
     // const texture = graphics.
+    const ballsTexture = [
+      '13', '11', '04', '16', '06', '02', '23'
+    ];
+    const randomColorsCount = 6;
     const mapSize = 10;
-    const countStartBalls = 10;
+    const countStartBalls = 50;
     const mapW = mapSize;
     const mapH = mapSize;
 
@@ -253,63 +257,63 @@ export class Game extends React.Component {
               map
             });
             // по горизонтали
-            
-            const lienH: number[][] = [
+
+            const lineH: number[][] = [
+              [pb[0], pb[1]]
+            ];
+            const lineW: number[][] = [
               [pb[0], pb[1]]
             ];
             // налево
-            for (let i = pb[1]-1; i >= 0; i -= 1) {
+            for (let i = pb[1] - 1; i >= 0; i -= 1) {
               const value = map[pb[0]][i];
               if (value === thisBallType) {
-                lienH.push([pb[0], i])
+                lineH.push([pb[0], i])
               } else {
                 break;
               }
             }
             // направо
-            for (let i = pb[1] + 1; i <= mapSize; i += 1) {
+            for (let i = pb[1] + 1; i < mapSize; i += 1) {
               const value = map[pb[0]][i];
               if (value === thisBallType) {
-                lienH.push([pb[0], i])
+                lineH.push([pb[0], i])
               } else {
                 break;
               }
             }
-            console.log(lienH);
-            if (lienH.length >= 5) {
-              console.log('WIN LINE');
-              // await new Promise(r => {
-              //   setTimeout(() => {
-              //     r();
-              //   }, 2000)
-              // })
-              for(const p of lienH) {
-                map[p[0]][p[1]] = 0;
-                // найти шарик
-                // удалить
-                const foundBallRemoveIndex = balls.findIndex(b => b.x === p[1] * 50 && b.y === p[0] * 50);
-                // foundBallRemove?.destroy();
-                const foundBallRemove = balls[foundBallRemoveIndex];
-                console.log({
-                  foundBallRemove
-                });
-                
-                if (foundBallRemove) {
-                  // foundBallRemove.visible = false;
-                  // foundBallRemove.re
-                  foundBallRemove.destroy();
-                  balls.splice(foundBallRemoveIndex, 1);
-                  await new Promise(r => {
-                    setTimeout(() => {
-                      r();
-                    }, 100)
-                  })
-                  // break;
-                  // foundBallRemove.y = 500;
-                  // stage.parent.removeChild(foundBallRemove);
-                }
 
+            // по вертикали
+
+            // вверх
+            for (let i = pb[0] - 1; i >= 0; i -= 1) {
+              console.log('вверх', i);
+              const value = map[i][pb[1]];
+              if (value === thisBallType) {
+                lineW.push([i, pb[1]])
+              } else {
+                break;
               }
+            }
+            // вниз
+            for (let i = pb[0] + 1; i < mapSize; i += 1) {
+              console.log('вниз', i);
+              const value = map[i][pb[1]];
+              if (value === thisBallType) {
+                lineW.push([i, pb[1]])
+              } else {
+                break;
+              }
+            }
+
+            console.log(lineH);
+            if (lineH.length >= 5) {
+              console.log('WIN LINE');
+              await removeBalls(lineH);
+            }
+            if (lineW.length >= 5) {
+              console.log('WIN LINE');
+              await removeBalls(lineW);
             }
             moovingBall = false;
             console.log(map);
@@ -325,10 +329,37 @@ export class Game extends React.Component {
       }
       map.push(line);
     }
-    const ballsTexture = [
-      '13', '11', '04', '16', '06'
-    ];
     let chaos = false;
+
+    async function removeBalls(points: number[][]) {
+      for (const p of points) {
+        map[p[0]][p[1]] = 0;
+        // найти шарик
+        // удалить
+        const foundBallRemoveIndex = balls.findIndex(b => b.x === p[1] * 50 && b.y === p[0] * 50);
+        // foundBallRemove?.destroy();
+        const foundBallRemove = balls[foundBallRemoveIndex];
+        console.log({
+          foundBallRemove
+        });
+
+        if (foundBallRemove) {
+          // foundBallRemove.visible = false;
+          // foundBallRemove.re
+          foundBallRemove.destroy();
+          balls.splice(foundBallRemoveIndex, 1);
+          await new Promise(r => {
+            setTimeout(() => {
+              r();
+            }, 100)
+          })
+          // break;
+          // foundBallRemove.y = 500;
+          // stage.parent.removeChild(foundBallRemove);
+        }
+
+      }
+    }
 
     function createBall(x: number, y: number, textureId: number, point: number[]) {
       const ball = PIXI.Sprite.from(`coloredspheres/sphere-${ballsTexture[textureId]}.png`);
@@ -411,7 +442,7 @@ export class Game extends React.Component {
     for (let i = 0; i < countStartBalls; i += 1) {
       const index = _.random((mapW * mapH) - i - 1);
       const point = freeMap[index];
-      const textureId = _.random(4);
+      const textureId = _.random(randomColorsCount - 1);
       freeMap.splice(index, 1);
       createBall(point.coords[0] * 50, point.coords[1] * 50, textureId, point.coords);
       map[point.coords[1]][point.coords[0]] = -(textureId) - 1;
