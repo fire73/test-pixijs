@@ -137,13 +137,15 @@ export class Game extends React.Component {
 
     // const renderer = PIXI.autoDetectRenderer();
     // const texture = graphics.
-    const mapSize = 14;
+    const mapSize = 10;
+    const countStartBalls = 10;
     const mapW = mapSize;
     const mapH = mapSize;
 
     const balls: PIXI.Sprite[] = [];
     let activeBall: number[] = [];
     let selectedBall = false;
+    let moovingBall = false;
 
     const map: number[][] = [];
     const freeMap: { coords: number[] }[] = [];
@@ -165,7 +167,7 @@ export class Game extends React.Component {
         // box.position
         // eslint-disable-next-line
         box.on('pointerdown', async () => {
-          console.log(`clicked`, box.name, box.x, box.y);
+          // console.log(`clicked`, box.name, box.x, box.y);
           if (activeBall.length) {
             const pointBox = [box.x / 50, box.y / 50];
             const foundBall = balls.find(b => b.x === activeBall[0] * 50 && b.y === activeBall[1] * 50);
@@ -185,13 +187,13 @@ export class Game extends React.Component {
             const mapping = this.methodLeeMapping(map, mapSize, 100, pointBall.reverse());
             const way = this.generatePath(mapping, pointBox.reverse(), 100, mapSize);
 
-            console.log({
-              pointBox,
-              pointBall,
-              mapping,
-              way,
-              wayL: way.length
-            });
+            // console.log({
+            //   pointBox,
+            //   pointBall,
+            //   mapping,
+            //   way,
+            //   wayL: way.length
+            // });
 
             if (way.length === 1) {
               activeBall = [];
@@ -199,7 +201,9 @@ export class Game extends React.Component {
               return;
             }
 
-            const speed = 10;
+            moovingBall = true;
+
+            const speed = 25;
 
             way.splice(0, 1);
             for (const wayEl of way) {
@@ -240,7 +244,75 @@ export class Game extends React.Component {
             // foundBall.y = box.y;
             // map[activeBall[1]][activeBall[0]] = 0;
             // map[point[1]][point[0]] = (-activeBall[2])-1;
-            console.log('map', map)
+            // console.log('map', map)
+            // определить, выигрышная ли позиция
+            const pb = pointBox;
+            const thisBallType = map[pb[0]][pb[1]];
+            console.log({
+              pb,
+              map
+            });
+            // по горизонтали
+            
+            const lienH: number[][] = [
+              [pb[0], pb[1]]
+            ];
+            // налево
+            for (let i = pb[1]-1; i >= 0; i -= 1) {
+              const value = map[pb[0]][i];
+              if (value === thisBallType) {
+                lienH.push([pb[0], i])
+              } else {
+                break;
+              }
+            }
+            // направо
+            for (let i = pb[1] + 1; i <= mapSize; i += 1) {
+              const value = map[pb[0]][i];
+              if (value === thisBallType) {
+                lienH.push([pb[0], i])
+              } else {
+                break;
+              }
+            }
+            console.log(lienH);
+            if (lienH.length >= 5) {
+              console.log('WIN LINE');
+              // await new Promise(r => {
+              //   setTimeout(() => {
+              //     r();
+              //   }, 2000)
+              // })
+              for(const p of lienH) {
+                map[p[0]][p[1]] = 0;
+                // найти шарик
+                // удалить
+                const foundBallRemoveIndex = balls.findIndex(b => b.x === p[1] * 50 && b.y === p[0] * 50);
+                // foundBallRemove?.destroy();
+                const foundBallRemove = balls[foundBallRemoveIndex];
+                console.log({
+                  foundBallRemove
+                });
+                
+                if (foundBallRemove) {
+                  // foundBallRemove.visible = false;
+                  // foundBallRemove.re
+                  foundBallRemove.destroy();
+                  balls.splice(foundBallRemoveIndex, 1);
+                  await new Promise(r => {
+                    setTimeout(() => {
+                      r();
+                    }, 100)
+                  })
+                  // break;
+                  // foundBallRemove.y = 500;
+                  // stage.parent.removeChild(foundBallRemove);
+                }
+
+              }
+            }
+            moovingBall = false;
+            console.log(map);
           }
           // console.log(balls.find(b => b.x === ))
         });
@@ -254,7 +326,7 @@ export class Game extends React.Component {
       map.push(line);
     }
     const ballsTexture = [
-      '13', '11', '04', '19', '06'
+      '13', '11', '04', '16', '06'
     ];
     let chaos = false;
 
@@ -274,6 +346,9 @@ export class Game extends React.Component {
         // if (!foundBall) {
         //   return;
         // }
+        if (moovingBall) {
+          return;
+        }
 
         if (selectedBall) {
           const foundBox = boxes.find(b => b.x === activeBall[0] * 50 && b.y === activeBall[1] * 50);
@@ -333,7 +408,6 @@ export class Game extends React.Component {
 
     //   });
     // });
-    const countStartBalls = 70;
     for (let i = 0; i < countStartBalls; i += 1) {
       const index = _.random((mapW * mapH) - i - 1);
       const point = freeMap[index];
