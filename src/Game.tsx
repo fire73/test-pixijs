@@ -7,6 +7,9 @@ export class Game extends React.Component {
   // constructor(props: any) {
   //   super(props);
   // }
+  state = {
+    score: 0
+  }
 
   methodLeeMapping(mapLocation: number[][], sizeMap: number, maxLen: number, startPoint: number[]) {
     const mapWayS: number[][] = [];
@@ -122,9 +125,10 @@ export class Game extends React.Component {
     const ballsTexture = [
       '13', '11', '04', '16', '06', '02', '23'
     ];
-    const randomColorsCount = 2;
-    const mapSize = 10;
-    const countStartBalls = 10;
+    const randomColorsCount = 5;
+    const mapSize = 9;
+    const countStartBalls = 5;
+    const countNewBalls = 3;
     const mapW = mapSize;
     const mapH = mapSize;
 
@@ -132,11 +136,12 @@ export class Game extends React.Component {
     let activeBall: number[] = [];
     let selectedBall = false;
     let moovingBall = false;
+    let score = 0;
 
     const map: number[][] = [];
     const freeMap: { coords: number[] }[] = [];
     const boxes: PIXI.Sprite[] = [];
-    
+
     for (let i = 0; i < mapW; i += 1) {
       const line: number[] = [];
       for (let j = 0; j < mapH; j += 1) {
@@ -209,12 +214,26 @@ export class Game extends React.Component {
             }
             map[pointBall[0]][pointBall[1]] = 0;
             map[pointBox[0]][pointBox[1]] = (-activeBall[2]) - 1;
-            
+
             const pb = pointBox;
-            await checkWinLines(pb);
-            const freeMapNow = checkFreeMap();
+            const { isWinLine, score: nowScore } = await checkWinLines(pb);
+
+            if (!isWinLine) {
+              const freeMapNow = checkFreeMap();
+              for (let nb = 1; nb <= countNewBalls; nb += 1) {
+                const index = _.random(freeMapNow.length - 1);
+                const point = freeMapNow[index];
+                const textureId = _.random(randomColorsCount - 1);
+                createBall(point[0] * 50, point[1] * 50, textureId, point);
+                freeMapNow.splice(index, 1);
+              }
+            } else {
+              this.setState({
+                score: nowScore
+              });
+            }
+
             moovingBall = false;
-            console.log(map, freeMapNow);
           }
         });
         stage.addChild(box);
@@ -324,23 +343,33 @@ export class Game extends React.Component {
         }
       }
 
+      let isWinLine = false;
 
       if (lineH.length >= 5) {
         console.log('WIN LINE');
         await removeBalls(lineH);
+        isWinLine = true;
+        score += lineH.length;
       }
       if (lineW.length >= 5) {
         console.log('WIN LINE');
         await removeBalls(lineW);
+        isWinLine = true;
+        score += lineW.length;
       }
       if (lineD1.length >= 5) {
         console.log('WIN LINE');
         await removeBalls(lineD1);
+        isWinLine = true;
+        score += lineD1.length;
       }
       if (lineD2.length >= 5) {
         console.log('WIN LINE');
         await removeBalls(lineD2);
+        isWinLine = true;
+        score += lineD2.length;
       }
+      return { isWinLine, score };
     }
 
     async function removeBalls(points: number[][]) {
@@ -442,6 +471,7 @@ export class Game extends React.Component {
       });
       balls.push(ball)
       stage.addChild(ball);
+      map[point[1]][point[0]] = -(textureId) - 1;
     }
 
     for (let i = 0; i < countStartBalls; i += 1) {
@@ -450,15 +480,15 @@ export class Game extends React.Component {
       const textureId = _.random(randomColorsCount - 1);
       freeMap.splice(index, 1);
       createBall(point.coords[0] * 50, point.coords[1] * 50, textureId, point.coords);
-      map[point.coords[1]][point.coords[0]] = -(textureId) - 1;
+      // map[point.coords[1]][point.coords[0]] = -(textureId) - 1;
     }
 
     function checkFreeMap() {
       const freeMapCheck: number[][] = [];
       map.forEach((lineY, y) => {
-        lineY.forEach((lineX, x) => { 
+        lineY.forEach((lineX, x) => {
           if (lineX === 0) {
-            freeMapCheck.push([y, x]);
+            freeMapCheck.push([x, y]);
           }
         });
       });
@@ -478,6 +508,7 @@ export class Game extends React.Component {
   render() {
     return (
       <div className="Game">
+        <h3>{this.state.score}</h3>
         <canvas id="canvasGame"></canvas>
       </div>
     );
