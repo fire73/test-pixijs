@@ -108,12 +108,7 @@ export class Game extends React.Component {
 
   componentDidMount() {
     const canvas = document.getElementById('canvasGame');
-    // const app = new PIXI.Application({
-    //   width: 700,
-    //   height: 700,
-    //   // backgroundColor: 0xcccccc,
-    //   transparent: true
-    // });
+
     const renderer = new PIXI.Renderer({
       view: canvas as HTMLCanvasElement,
       width: 700,
@@ -124,25 +119,12 @@ export class Game extends React.Component {
     });
 
     const stage = new PIXI.Container();
-
-    // The application will create a canvas element for you that you
-    // can then insert into the DOM.
-    // document.body.appendChild(app.view);
-
-    // const graphics = new PIXI.Graphics();
-    // graphics.lineStyle(2, 0x000000, 1);
-    // graphics.beginFill(0xC0CCCC);
-    // graphics.drawRect(0, 0, 50, 50);
-    // graphics.endFill();
-
-    // const renderer = PIXI.autoDetectRenderer();
-    // const texture = graphics.
     const ballsTexture = [
       '13', '11', '04', '16', '06', '02', '23'
     ];
-    const randomColorsCount = 6;
+    const randomColorsCount = 2;
     const mapSize = 10;
-    const countStartBalls = 50;
+    const countStartBalls = 10;
     const mapW = mapSize;
     const mapH = mapSize;
 
@@ -154,11 +136,10 @@ export class Game extends React.Component {
     const map: number[][] = [];
     const freeMap: { coords: number[] }[] = [];
     const boxes: PIXI.Sprite[] = [];
+    
     for (let i = 0; i < mapW; i += 1) {
       const line: number[] = [];
       for (let j = 0; j < mapH; j += 1) {
-        // var texture = PIXI.generateTexture(graphics);
-        // const box = new PIXI.Sprite();
         const box = new PIXI.Sprite(PIXI.Texture.WHITE);
         box.x = j * 50;
         box.y = i * 50;
@@ -168,10 +149,8 @@ export class Game extends React.Component {
         box.buttonMode = true;
         box.interactive = true;
         box.name = `${j}_${i}`;
-        // box.position
         // eslint-disable-next-line
         box.on('pointerdown', async () => {
-          // console.log(`clicked`, box.name, box.x, box.y);
           if (activeBall.length) {
             const pointBox = [box.x / 50, box.y / 50];
             const foundBall = balls.find(b => b.x === activeBall[0] * 50 && b.y === activeBall[1] * 50);
@@ -183,21 +162,12 @@ export class Game extends React.Component {
               foundBox
             })
             if (foundBox) {
-              // foundBox.
               foundBox.tint = 0xCCCCCC;
             }
             const pointBall = [foundBall.x / 50, foundBall.y / 50];
 
             const mapping = this.methodLeeMapping(map, mapSize, 100, pointBall.reverse());
             const way = this.generatePath(mapping, pointBox.reverse(), 100, mapSize);
-
-            // console.log({
-            //   pointBox,
-            //   pointBall,
-            //   mapping,
-            //   way,
-            //   wayL: way.length
-            // });
 
             if (way.length === 1) {
               activeBall = [];
@@ -211,14 +181,12 @@ export class Game extends React.Component {
 
             way.splice(0, 1);
             for (const wayEl of way) {
-              // wayEl[0]
               const x = wayEl[0] * 50;
               const y = wayEl[1] * 50;
               const tickerWay = new PIXI.Ticker();
               await new Promise((r) => {
                 tickerWay.add(() => {
                   if (foundBall.x === x && foundBall.y === y) {
-                    // clearTimeout(timeout);
                     r();
                   }
                   if (foundBall.x < x) {
@@ -241,84 +209,13 @@ export class Game extends React.Component {
             }
             map[pointBall[0]][pointBall[1]] = 0;
             map[pointBox[0]][pointBox[1]] = (-activeBall[2]) - 1;
-            // if (!foundBall) {
-            //   return;
-            // }
-            // foundBall.x = box.x;
-            // foundBall.y = box.y;
-            // map[activeBall[1]][activeBall[0]] = 0;
-            // map[point[1]][point[0]] = (-activeBall[2])-1;
-            // console.log('map', map)
-            // определить, выигрышная ли позиция
+            
             const pb = pointBox;
-            const thisBallType = map[pb[0]][pb[1]];
-            console.log({
-              pb,
-              map
-            });
-            // по горизонтали
-
-            const lineH: number[][] = [
-              [pb[0], pb[1]]
-            ];
-            const lineW: number[][] = [
-              [pb[0], pb[1]]
-            ];
-            // налево
-            for (let i = pb[1] - 1; i >= 0; i -= 1) {
-              const value = map[pb[0]][i];
-              if (value === thisBallType) {
-                lineH.push([pb[0], i])
-              } else {
-                break;
-              }
-            }
-            // направо
-            for (let i = pb[1] + 1; i < mapSize; i += 1) {
-              const value = map[pb[0]][i];
-              if (value === thisBallType) {
-                lineH.push([pb[0], i])
-              } else {
-                break;
-              }
-            }
-
-            // по вертикали
-
-            // вверх
-            for (let i = pb[0] - 1; i >= 0; i -= 1) {
-              console.log('вверх', i);
-              const value = map[i][pb[1]];
-              if (value === thisBallType) {
-                lineW.push([i, pb[1]])
-              } else {
-                break;
-              }
-            }
-            // вниз
-            for (let i = pb[0] + 1; i < mapSize; i += 1) {
-              console.log('вниз', i);
-              const value = map[i][pb[1]];
-              if (value === thisBallType) {
-                lineW.push([i, pb[1]])
-              } else {
-                break;
-              }
-            }
-
-            console.log(lineH);
-            if (lineH.length >= 5) {
-              console.log('WIN LINE');
-              await removeBalls(lineH);
-            }
-            if (lineW.length >= 5) {
-              console.log('WIN LINE');
-              await removeBalls(lineW);
-            }
+            await checkWinLines(pb);
+            const freeMapNow = checkFreeMap();
             moovingBall = false;
-            console.log(map);
+            console.log(map, freeMapNow);
           }
-          // console.log(balls.find(b => b.x === ))
         });
         stage.addChild(box);
         boxes.push(box);
@@ -330,6 +227,121 @@ export class Game extends React.Component {
       map.push(line);
     }
     let chaos = false;
+
+    async function checkWinLines(pb: number[]) {
+      const thisBallType = map[pb[0]][pb[1]];
+
+      // по горизонтали
+      const lineH: number[][] = [
+        [pb[0], pb[1]]
+      ];
+      const lineW: number[][] = [
+        [pb[0], pb[1]]
+      ];
+      const lineD1: number[][] = [
+        [pb[0], pb[1]]
+      ];
+      const lineD2: number[][] = [
+        [pb[0], pb[1]]
+      ];
+      // налево
+      for (let i = pb[1] - 1; i >= 0; i -= 1) {
+        const value = map[pb[0]][i];
+        if (value === thisBallType) {
+          lineH.push([pb[0], i])
+        } else {
+          break;
+        }
+      }
+      // направо
+      for (let i = pb[1] + 1; i < mapSize; i += 1) {
+        const value = map[pb[0]][i];
+        if (value === thisBallType) {
+          lineH.push([pb[0], i])
+        } else {
+          break;
+        }
+      }
+
+      // по вертикали
+
+      // вверх
+      for (let i = pb[0] - 1; i >= 0; i -= 1) {
+        const value = map[i][pb[1]];
+        if (value === thisBallType) {
+          lineW.push([i, pb[1]])
+        } else {
+          break;
+        }
+      }
+      // вниз
+      for (let i = pb[0] + 1; i < mapSize; i += 1) {
+        const value = map[i][pb[1]];
+        if (value === thisBallType) {
+          lineW.push([i, pb[1]])
+        } else {
+          break;
+        }
+      }
+
+      // диагональ1 
+      // вверх 
+      for (let i = pb[0] - 1, j = pb[1] - 1; i >= 0 && j >= 0; i -= 1, j -= 1) {
+        const value = map[i][j];
+        if (value === thisBallType) {
+          lineD1.push([i, j])
+        } else {
+          break;
+        }
+      }
+      // вниз
+      for (let i = pb[0] + 1, j = pb[1] + 1; i < mapSize && j >= 0; i += 1, j += 1) {
+        const value = map[i][j];
+        if (value === thisBallType) {
+          lineD1.push([i, j])
+        } else {
+          break;
+        }
+      }
+
+      // диагональ2 
+      // вверх 
+      for (let i = pb[0] - 1, j = pb[1] + 1; i >= 0 && j < mapSize; i -= 1, j += 1) {
+        const value = map[i][j];
+        if (value === thisBallType) {
+          lineD2.push([i, j])
+        } else {
+          break;
+        }
+      }
+      // вниз
+      for (let i = pb[0] + 1, j = pb[1] - 1; i < mapSize && j >= 0; i += 1, j -= 1) {
+        const value = map[i][j];
+        if (value === thisBallType) {
+          lineD2.push([i, j])
+        } else {
+          break;
+        }
+      }
+
+
+      if (lineH.length >= 5) {
+        console.log('WIN LINE');
+        await removeBalls(lineH);
+      }
+      if (lineW.length >= 5) {
+        console.log('WIN LINE');
+        await removeBalls(lineW);
+      }
+      if (lineD1.length >= 5) {
+        console.log('WIN LINE');
+        await removeBalls(lineD1);
+      }
+      if (lineD2.length >= 5) {
+        console.log('WIN LINE');
+        await removeBalls(lineD2);
+      }
+    }
 
     async function removeBalls(points: number[][]) {
       for (const p of points) {
@@ -431,14 +443,7 @@ export class Game extends React.Component {
       balls.push(ball)
       stage.addChild(ball);
     }
-    // console.log({
-    //   freeMap
-    // });
-    // map.forEach((line, key1) => {
-    //   line.forEach((item, key2) => {
 
-    //   });
-    // });
     for (let i = 0; i < countStartBalls; i += 1) {
       const index = _.random((mapW * mapH) - i - 1);
       const point = freeMap[index];
@@ -448,21 +453,17 @@ export class Game extends React.Component {
       map[point.coords[1]][point.coords[0]] = -(textureId) - 1;
     }
 
-    // console.log('balls', balls);
-
-    // console.log(balls.find(b => b.x === ))
-
-    // app.ticker.add(() => {
-    //   if(chaos) {
-    //     balls.forEach(ball => {
-    //       ball.x = _.random(1) === 1 ? ball.x - _.random(2) : ball.x + _.random(2);
-    //       ball.y = _.random(1) === 1 ? ball.y - _.random(2) : ball.y + _.random(2);
-    //     })
-    //   }
-    // });
-
-    // createBall(100, 150, 0);
-    console.log('map', map);
+    function checkFreeMap() {
+      const freeMapCheck: number[][] = [];
+      map.forEach((lineY, y) => {
+        lineY.forEach((lineX, x) => { 
+          if (lineX === 0) {
+            freeMapCheck.push([y, x]);
+          }
+        });
+      });
+      return freeMapCheck;
+    }
 
     const ticker = new PIXI.Ticker();
     ticker.add(animate);
