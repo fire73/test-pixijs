@@ -80,7 +80,6 @@ export class Game extends React.Component {
       [endPoint[0], endPoint[1]]
     ];
     const ep = endPoint;
-    // const mapWayS = this.state.mapWayS;
 
     let lpw = [ep[0], ep[1]];
     for (let i = 0; i < maxLen; i += 1) {
@@ -163,9 +162,6 @@ export class Game extends React.Component {
               return;
             }
             const foundBox = boxes.find(b => b.x === foundBall.x && b.y === foundBall.y);
-            console.log({
-              foundBox
-            })
             if (foundBox) {
               foundBox.tint = 0xCCCCCC;
             }
@@ -217,16 +213,32 @@ export class Game extends React.Component {
 
             const pb = pointBox;
             const { isWinLine, score: nowScore } = await checkWinLines(pb);
+            let gameOver = false;
 
             if (!isWinLine) {
-              const freeMapNow = checkFreeMap();
               for (let nb = 1; nb <= countNewBalls; nb += 1) {
-                const index = _.random(freeMapNow.length - 1);
-                const point = freeMapNow[index];
-                const textureId = _.random(randomColorsCount - 1);
-                createBall(point[0] * 50, point[1] * 50, textureId, point);
-                freeMapNow.splice(index, 1);
+                const freeMapNow = checkFreeMap();
+                if (freeMapNow.length) {
+                  const index = _.random(freeMapNow.length - 1);
+                  const point = freeMapNow[index];
+                  const textureId = _.random(randomColorsCount - 1);
+                  createBall(point[0] * 50, point[1] * 50, textureId, point);
+                  const { isWinLine: isNowWin, score: nowScoreCreateBall } = await checkWinLines(point.reverse());
+                  if (isNowWin) {
+                    this.setState({
+                      score: nowScoreCreateBall
+                    });
+                  }
+                } else {
+                  gameOver = true;
+                }
               }
+              // 
+              if (gameOver) {
+                alert('game over');
+                document.location.reload();
+              }
+
             } else {
               this.setState({
                 score: nowScore
@@ -245,7 +257,6 @@ export class Game extends React.Component {
       }
       map.push(line);
     }
-    let chaos = false;
 
     async function checkWinLines(pb: number[]) {
       const thisBallType = map[pb[0]][pb[1]];
@@ -378,15 +389,9 @@ export class Game extends React.Component {
         // найти шарик
         // удалить
         const foundBallRemoveIndex = balls.findIndex(b => b.x === p[1] * 50 && b.y === p[0] * 50);
-        // foundBallRemove?.destroy();
         const foundBallRemove = balls[foundBallRemoveIndex];
-        console.log({
-          foundBallRemove
-        });
 
         if (foundBallRemove) {
-          // foundBallRemove.visible = false;
-          // foundBallRemove.re
           foundBallRemove.destroy();
           balls.splice(foundBallRemoveIndex, 1);
           await new Promise(r => {
@@ -394,9 +399,6 @@ export class Game extends React.Component {
               r();
             }, 100)
           })
-          // break;
-          // foundBallRemove.y = 500;
-          // stage.parent.removeChild(foundBallRemove);
         }
 
       }
@@ -412,62 +414,26 @@ export class Game extends React.Component {
       ball.interactive = true;
       ball.name = `${point[0]}_${point[1]}`;
       ball.on('pointerdown', () => {
-        console.log(`clicked ball`, ball.name);
-        // chaos = !chaos;
-        // const foundBall = balls.find(b => b.name === ball.name);
-        // if (!foundBall) {
-        //   return;
-        // }
         if (moovingBall) {
           return;
         }
 
         if (selectedBall) {
           const foundBox = boxes.find(b => b.x === activeBall[0] * 50 && b.y === activeBall[1] * 50);
-          console.log({
-            foundBox
-          })
           if (foundBox) {
-            // foundBox.
             foundBox.tint = 0xCCCCCC;
           }
         }
 
         activeBall = [ball.x / 50, ball.y / 50, textureId];
 
-        console.log('activeBall', activeBall);
         selectedBall = true;
 
         const foundBox = boxes.find(b => b.x === ball.x && b.y === ball.y);
-        console.log({
-          foundBox
-        })
+        
         if (foundBox) {
-          // foundBox.
           foundBox.tint = 0x48D1CC;
         }
-        // const tickerBall = new PIXI.Ticker();
-        // const startBall = {
-        //   x: ball.x,
-        //   y: ball.y
-        // }
-        // tickerBall.add(() => {
-        //   if (!selectedBall) {
-
-        //   }
-        //   ball.x = _.random(1) === 1 ? ball.x - _.random(2) : ball.x + _.random(2);
-        //   ball.y = _.random(1) === 1 ? ball.y - _.random(2) : ball.y + _.random(2);
-        // });
-        // tickerBall.start();
-        // const timeout = setTimeout(() => {
-        //   tickerBall.stop();
-        //   tickerBall.destroy();
-        //   ball.x = startBall.x;
-        //   ball.y = startBall.y;
-        //   selectedBall = false;
-        //   activeBall = [];
-        //   clearTimeout(timeout);
-        // }, 3000);
       });
       balls.push(ball)
       stage.addChild(ball);
@@ -480,7 +446,6 @@ export class Game extends React.Component {
       const textureId = _.random(randomColorsCount - 1);
       freeMap.splice(index, 1);
       createBall(point.coords[0] * 50, point.coords[1] * 50, textureId, point.coords);
-      // map[point.coords[1]][point.coords[0]] = -(textureId) - 1;
     }
 
     function checkFreeMap() {
