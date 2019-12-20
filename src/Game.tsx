@@ -113,8 +113,8 @@ export class Game extends React.Component {
 
     const renderer = new PIXI.Renderer({
       view: canvas as HTMLCanvasElement,
-      width: 700,
-      height: 700,
+      width: 450,
+      height: 450,
       resolution: window.devicePixelRatio,
       autoDensity: true,
       transparent: true

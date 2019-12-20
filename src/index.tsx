@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { HashRouter } from 'react-router-dom';
+import { HashRouter, Link } from 'react-router-dom';
 import './index.css';
 // import App from './App';
 import { Game } from './Game';
@@ -8,12 +8,12 @@ import { Main } from './Main';
 import * as serviceWorker from './serviceWorker';
 
 ReactDOM.render(
-<div>
-  <HashRouter>
-    <Main/>
-  </HashRouter>
-</div>
-, document.getElementById('root'));
+  <div>
+    <HashRouter>
+      <Main />
+    </HashRouter>
+  </div>
+  , document.getElementById('root'));
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.
