@@ -1,9 +1,9 @@
 import _ from 'lodash';
 import React from 'react';
-import './Game.css';
+import './ColorLines.css';
 import * as PIXI from 'pixi.js'
 
-export class Game extends React.Component {
+export class ColorLines extends React.Component {
   // constructor(props: any) {
   //   super(props);
   // }
@@ -132,6 +132,8 @@ export class Game extends React.Component {
     const mapH = mapSize;
 
     const balls: PIXI.Sprite[] = [];
+    const aniBalls: { sprite: PIXI.Sprite, anim: { direction: number }} [] = [];
+
     let activeBall: number[] = [];
     let selectedBall = false;
     let moovingBall = false;
@@ -384,7 +386,9 @@ export class Game extends React.Component {
     }
 
     async function removeBalls(points: number[][]) {
+      const removeBalls: { sprite: { x: number, y: number, width: number, height: number }, textureId: number }[] = [];
       for (const p of points) {
+        const textureId = map[p[0]][p[1]];
         map[p[0]][p[1]] = 0;
         // найти шарик
         // удалить
@@ -392,15 +396,33 @@ export class Game extends React.Component {
         const foundBallRemove = balls[foundBallRemoveIndex];
 
         if (foundBallRemove) {
+          removeBalls.push({
+            sprite: {
+              height: foundBallRemove.height,
+              width: foundBallRemove.width,
+              x: foundBallRemove.x,
+              y: foundBallRemove.y,
+            },
+            textureId: Math.abs(textureId)
+          });
           foundBallRemove.destroy();
           balls.splice(foundBallRemoveIndex, 1);
-          await new Promise(r => {
-            setTimeout(() => {
-              r();
-            }, 100)
-          })
         }
-
+      }
+      
+      for (const item of removeBalls) {
+        const newAniBall = PIXI.Sprite.from(`coloredspheres/sphere-${ballsTexture[item.textureId-1]}.png`);
+        newAniBall.x = item.sprite.x;
+        newAniBall.y = item.sprite.y;
+        newAniBall.width = item.sprite.width;
+        newAniBall.height = item.sprite.height;
+        aniBalls.push({
+          sprite: newAniBall,
+          anim: {
+            direction: _.random(3)
+          }
+        });
+        stage.addChild(newAniBall);
       }
     }
 
@@ -430,7 +452,7 @@ export class Game extends React.Component {
         selectedBall = true;
 
         const foundBox = boxes.find(b => b.x === ball.x && b.y === ball.y);
-        
+
         if (foundBox) {
           foundBox.tint = 0x48D1CC;
         }
@@ -464,8 +486,53 @@ export class Game extends React.Component {
     ticker.add(animate);
     ticker.start();
 
+    let deltaAnim = 0;
     function animate() {
       renderer.render(stage);
+      if (aniBalls.length) {
+        aniBalls.forEach((aniBall, key) => {
+          if (aniBall.anim.direction === 0) {
+            if (aniBall.sprite.x > -10) {
+              deltaAnim += 0.2;
+              aniBall.sprite.x -= 10;
+              aniBall.sprite.y += Math.sin(deltaAnim) * 10;
+            } else {
+              aniBall.sprite.destroy();
+              aniBalls.splice(key,1);
+            }
+          }
+          if (aniBall.anim.direction === 1) {
+            if (aniBall.sprite.x < mapW * 50) {
+              deltaAnim += 0.2;
+              aniBall.sprite.x += 10;
+              aniBall.sprite.y += Math.sin(deltaAnim) * 10;
+            } else {
+              aniBall.sprite.destroy();
+              aniBalls.splice(key,1);
+            }
+          }
+          if (aniBall.anim.direction === 2) {
+            if (aniBall.sprite.y < mapH * 50) {
+              deltaAnim += 0.2;
+              aniBall.sprite.y += 10;
+              aniBall.sprite.x += Math.sin(deltaAnim) * 10;
+            } else {
+              aniBall.sprite.destroy();
+              aniBalls.splice(key,1);
+            }
+          }
+          if (aniBall.anim.direction === 3) {
+            if (aniBall.sprite.y > -10) {
+              deltaAnim += 0.2;
+              aniBall.sprite.y -= 10;
+              aniBall.sprite.x += Math.sin(deltaAnim) * 10;
+            } else {
+              aniBall.sprite.destroy();
+              aniBalls.splice(key,1);
+            }
+          }
+        });
+      }
     }
 
   }

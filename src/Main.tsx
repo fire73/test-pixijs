@@ -1,6 +1,6 @@
 import React from 'react';
 import App from './App';
-import { Game } from './Game'
+import { ColorLines } from './ColorLines'
 import { Switch, Route, Link } from 'react-router-dom';
 
 class Home extends React.Component {
@@ -27,7 +27,7 @@ export class Main extends React.Component {
         <div className="Switch">
           <Switch>
             <Route path='/' exact component={Home} />
-            <Route path='/color-lines' component={Game} />
+            <Route path='/color-lines' component={ColorLines} />
             <Route path='/method-lee' component={App} />
           </Switch>
         </div>
