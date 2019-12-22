@@ -138,6 +138,7 @@ export class ColorLines extends React.Component {
     let selectedBall = false;
     let moovingBall = false;
     let score = 0;
+    let animActiveBall: any = undefined;
 
     const map: number[][] = [];
     const freeMap: { coords: number[] }[] = [];
@@ -158,11 +159,16 @@ export class ColorLines extends React.Component {
         // eslint-disable-next-line
         box.on('pointerdown', async () => {
           if (activeBall.length) {
+            // (animActiveBall as PIXI.Sprite).
             const pointBox = [box.x / 50, box.y / 50];
             const foundBall = balls.find(b => b.x === activeBall[0] * 50 && b.y === activeBall[1] * 50);
             if (!foundBall) {
               return;
             }
+            foundBall.scale.set(0);
+            foundBall.width = 45;
+            foundBall.height = 45;
+
             const foundBox = boxes.find(b => b.x === foundBall.x && b.y === foundBall.y);
             if (foundBox) {
               foundBox.tint = 0xCCCCCC;
@@ -178,6 +184,8 @@ export class ColorLines extends React.Component {
               return;
             }
 
+            animActiveBall = undefined;
+            // foundBall.scale.set(1);
             moovingBall = true;
 
             const speed = 25;
@@ -234,6 +242,11 @@ export class ColorLines extends React.Component {
                 } else {
                   gameOver = true;
                 }
+              }
+
+              const freeMapNow = checkFreeMap();
+              if (!freeMapNow.length) {
+                gameOver = true;
               }
               // 
               if (gameOver) {
@@ -440,22 +453,33 @@ export class ColorLines extends React.Component {
           return;
         }
 
+        if(animActiveBall) {
+          animActiveBall.scale.set(0);
+          animActiveBall.width = 45;
+          animActiveBall.height = 45;
+        }
+
         if (selectedBall) {
-          const foundBox = boxes.find(b => b.x === activeBall[0] * 50 && b.y === activeBall[1] * 50);
-          if (foundBox) {
-            foundBox.tint = 0xCCCCCC;
-          }
+          // const foundBox = boxes.find(b => b.x === activeBall[0] * 50 && b.y === activeBall[1] * 50);
+          // if (foundBox) {
+          //   foundBox.tint = 0xCCCCCC;
+          // }
+          
         }
 
         activeBall = [ball.x / 50, ball.y / 50, textureId];
 
         selectedBall = true;
 
-        const foundBox = boxes.find(b => b.x === ball.x && b.y === ball.y);
+        // const foundBox = boxes.find(b => b.x === ball.x && b.y === ball.y);
 
-        if (foundBox) {
-          foundBox.tint = 0x48D1CC;
-        }
+        // if (foundBox) {
+        //   foundBox.tint = 0x48D1CC;
+        // }
+
+        animActiveBall = ball;
+        // ball.anchor.set(0);
+        // ball.scale.set(0.3)
       });
       balls.push(ball)
       stage.addChild(ball);
@@ -489,6 +513,16 @@ export class ColorLines extends React.Component {
     let deltaAnim = 0;
     function animate() {
       renderer.render(stage);
+      if (animActiveBall) {
+        const activeBallSpritre = animActiveBall as PIXI.Sprite;
+        deltaAnim += 0.1;
+        const scale = 0.1 + Math.abs(Math.sin(deltaAnim) / 15);
+        // console.log(scale);
+        // activeBallSpritre.anchor.set(2);
+        // // activeBallSpritre.transform.
+        activeBallSpritre.scale.set(scale);
+      
+      }
       if (aniBalls.length) {
         aniBalls.forEach((aniBall, key) => {
           if (aniBall.anim.direction === 0) {
