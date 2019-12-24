@@ -2,13 +2,15 @@ import _ from 'lodash';
 import React from 'react';
 import './ColorLines.css';
 import * as PIXI from 'pixi.js'
+import moment from 'moment';
 
 export class ColorLines extends React.Component {
   // constructor(props: any) {
   //   super(props);
   // }
   state = {
-    score: 0
+    score: 0,
+    x2: 0
   }
 
   methodLeeMapping(mapLocation: number[][], sizeMap: number, maxLen: number, startPoint: number[]) {
@@ -138,6 +140,7 @@ export class ColorLines extends React.Component {
     let selectedBall = false;
     let moovingBall = false;
     let score = 0;
+    let x2check = 0;
     let animActiveBall: any = undefined;
 
     const map: number[][] = [];
@@ -253,8 +256,14 @@ export class ColorLines extends React.Component {
                 alert('game over');
                 document.location.reload();
               }
-
+              x2check = 0;
             } else {
+              x2check += 1;
+              if (x2check >= 2) {
+                this.setState({
+                  x2: this.state.x2 + 1
+                })
+              }
               this.setState({
                 score: nowScore
               });
@@ -574,7 +583,8 @@ export class ColorLines extends React.Component {
   render() {
     return (
       <div className="Game">
-        <h3>{this.state.score}</h3>
+        <h3>score: {this.state.score}</h3>
+        <h3>combo: {this.state.x2} </h3>
         <canvas id="canvasGame"></canvas>
       </div>
     );
