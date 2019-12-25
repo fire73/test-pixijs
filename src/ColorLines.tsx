@@ -2,16 +2,27 @@ import _ from 'lodash';
 import React from 'react';
 import './ColorLines.css';
 import * as PIXI from 'pixi.js'
-import moment from 'moment';
 
 export class ColorLines extends React.Component {
   // constructor(props: any) {
   //   super(props);
   // }
-  state = {
-    score: 0,
-    x2: 0
-  }
+  state: {
+    score: number;
+    x2: number;
+    statisticColors: {
+      typeColor: number;
+      count: number;
+    }[],
+    ballsTexture: string[],
+    nextBalls: number[]
+  } = {
+      score: 0,
+      x2: 0,
+      statisticColors: [],
+      ballsTexture: [],
+      nextBalls: []
+    }
 
   methodLeeMapping(mapLocation: number[][], sizeMap: number, maxLen: number, startPoint: number[]) {
     const mapWayS: number[][] = [];
@@ -123,9 +134,16 @@ export class ColorLines extends React.Component {
     });
 
     const stage = new PIXI.Container();
+    const statisticColors: {
+      typeColor: number;
+      count: number;
+    }[] = [];
     const ballsTexture = [
       '13', '11', '04', '16', '06', '02', '23'
     ];
+    this.setState({
+      ballsTexture
+    })
     const randomColorsCount = 5;
     const mapSize = 9;
     const countStartBalls = 5;
@@ -134,7 +152,14 @@ export class ColorLines extends React.Component {
     const mapH = mapSize;
 
     const balls: PIXI.Sprite[] = [];
-    const aniBalls: { sprite: PIXI.Sprite, anim: { direction: number }} [] = [];
+    const aniBalls: { sprite: PIXI.Sprite, anim: { direction: number } }[] = [];
+    let nextBalls = [];
+    for (let i = 0; i < countNewBalls; i += 1) {
+      nextBalls.push(_.random(randomColorsCount - 1))
+    }
+    this.setState({
+      nextBalls
+    })
 
     let activeBall: number[] = [];
     let selectedBall = false;
@@ -234,12 +259,16 @@ export class ColorLines extends React.Component {
                 if (freeMapNow.length) {
                   const index = _.random(freeMapNow.length - 1);
                   const point = freeMapNow[index];
-                  const textureId = _.random(randomColorsCount - 1);
+                  // const textureId = _.random(randomColorsCount - 1);
+                  const textureId = this.state.nextBalls[nb - 1];
                   createBall(point[0] * 50, point[1] * 50, textureId, point);
                   const { isWinLine: isNowWin, score: nowScoreCreateBall } = await checkWinLines(point.reverse());
                   if (isNowWin) {
                     this.setState({
                       score: nowScoreCreateBall
+                    });
+                    this.setState({
+                      statisticColors
                     });
                   }
                 } else {
@@ -267,7 +296,19 @@ export class ColorLines extends React.Component {
               this.setState({
                 score: nowScore
               });
+              this.setState({
+                statisticColors
+              });
             }
+            let nextBalls = [];
+            for (let i = 0; i < countNewBalls; i += 1) {
+              nextBalls.push(_.random(randomColorsCount - 1))
+            }
+            this.setState({
+              nextBalls
+            })
+
+            console.log(this.state.nextBalls);
 
             moovingBall = false;
           }
@@ -404,6 +445,21 @@ export class ColorLines extends React.Component {
         isWinLine = true;
         score += lineD2.length;
       }
+      if (isWinLine) {
+        // statisticColors.push({
+
+        // })
+        console.log('thisBallType', thisBallType);
+        const foundSt = statisticColors.find(st => st.typeColor === thisBallType);
+        if (foundSt) {
+          foundSt.count += 1;
+        } else {
+          statisticColors.push({
+            count: 1,
+            typeColor: thisBallType
+          })
+        }
+      }
       return { isWinLine, score };
     }
 
@@ -431,9 +487,9 @@ export class ColorLines extends React.Component {
           balls.splice(foundBallRemoveIndex, 1);
         }
       }
-      
+
       for (const item of removeBalls) {
-        const newAniBall = PIXI.Sprite.from(`coloredspheres/sphere-${ballsTexture[item.textureId-1]}.png`);
+        const newAniBall = PIXI.Sprite.from(`coloredspheres/sphere-${ballsTexture[item.textureId - 1]}.png`);
         newAniBall.x = item.sprite.x;
         newAniBall.y = item.sprite.y;
         newAniBall.width = item.sprite.width;
@@ -462,7 +518,7 @@ export class ColorLines extends React.Component {
           return;
         }
 
-        if(animActiveBall) {
+        if (animActiveBall) {
           animActiveBall.scale.set(0);
           animActiveBall.width = 45;
           animActiveBall.height = 45;
@@ -473,7 +529,7 @@ export class ColorLines extends React.Component {
           // if (foundBox) {
           //   foundBox.tint = 0xCCCCCC;
           // }
-          
+
         }
 
         activeBall = [ball.x / 50, ball.y / 50, textureId];
@@ -530,7 +586,7 @@ export class ColorLines extends React.Component {
         // activeBallSpritre.anchor.set(2);
         // // activeBallSpritre.transform.
         activeBallSpritre.scale.set(scale);
-      
+
       }
       if (aniBalls.length) {
         aniBalls.forEach((aniBall, key) => {
@@ -541,7 +597,7 @@ export class ColorLines extends React.Component {
               aniBall.sprite.y += Math.sin(deltaAnim) * 10;
             } else {
               aniBall.sprite.destroy();
-              aniBalls.splice(key,1);
+              aniBalls.splice(key, 1);
             }
           }
           if (aniBall.anim.direction === 1) {
@@ -551,7 +607,7 @@ export class ColorLines extends React.Component {
               aniBall.sprite.y += Math.sin(deltaAnim) * 10;
             } else {
               aniBall.sprite.destroy();
-              aniBalls.splice(key,1);
+              aniBalls.splice(key, 1);
             }
           }
           if (aniBall.anim.direction === 2) {
@@ -561,7 +617,7 @@ export class ColorLines extends React.Component {
               aniBall.sprite.x += Math.sin(deltaAnim) * 10;
             } else {
               aniBall.sprite.destroy();
-              aniBalls.splice(key,1);
+              aniBalls.splice(key, 1);
             }
           }
           if (aniBall.anim.direction === 3) {
@@ -571,7 +627,7 @@ export class ColorLines extends React.Component {
               aniBall.sprite.x += Math.sin(deltaAnim) * 10;
             } else {
               aniBall.sprite.destroy();
-              aniBalls.splice(key,1);
+              aniBalls.splice(key, 1);
             }
           }
         });
@@ -580,12 +636,33 @@ export class ColorLines extends React.Component {
 
   }
 
+  getStatistic() {
+    return <div>
+      {this.state.statisticColors.map((el, key) => {
+        const indexType = (Math.abs(el.typeColor) - 1);
+        return <div key={key}>
+          <img width="25" height="25" src={`coloredspheres/sphere-${this.state.ballsTexture[indexType]}.png`} alt="Logo" /> : {el.count}
+        </div>
+      })}
+    </div>
+  }
+
+  getNextBalls() {
+    return <div>
+      {this.state.nextBalls.map(index => {
+        return <img alt="nextBall" width="25" height="25" src={`coloredspheres/sphere-${this.state.ballsTexture[index]}.png`}/> 
+      })}
+    </div>
+  }
+
   render() {
     return (
       <div className="Game">
         <h3>score: {this.state.score}</h3>
         <h3>combo: {this.state.x2} </h3>
+        {this.getNextBalls()}
         <canvas id="canvasGame"></canvas>
+        {this.getStatistic()}
       </div>
     );
   }
