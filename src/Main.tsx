@@ -1,6 +1,7 @@
 import React from 'react';
 import App from './App';
 import { ColorLines } from './ColorLines'
+import { Shooter } from './Shooter'
 import { Switch, Route, Link } from 'react-router-dom';
 
 class Home extends React.Component {
@@ -11,6 +12,7 @@ class Home extends React.Component {
           <ul>
             <li><Link to='/color-lines'>Color lines</Link></li>
             <li><Link to='/method-lee'>Method lee</Link></li>
+            <li><Link to='/shooter'>Shooter</Link></li>
           </ul>
         </nav>
       </div>
@@ -29,6 +31,7 @@ export class Main extends React.Component {
             <Route path='/' exact component={Home} />
             <Route path='/color-lines' component={ColorLines} />
             <Route path='/method-lee' component={App} />
+            <Route path='/shooter' component={Shooter} />
           </Switch>
         </div>
       </div>
