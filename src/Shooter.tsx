@@ -47,8 +47,9 @@ export class Shooter extends React.Component {
   }
 
   componentDidMount() {
-    const canvasW = 700;
-    const canvasH = 700;
+    const canvasW = window.innerWidth - 10;
+    const canvasH = window.innerHeight - 10;
+    console.log(canvasW, canvasH);
     const canvas = document.getElementById('canvasGame');
     const renderer = new PIXI.Renderer({
       view: canvas as HTMLCanvasElement,
@@ -65,7 +66,7 @@ export class Shooter extends React.Component {
     const player = PIXI.Sprite.from(`coloredspheres/sphere-01.png`) as CustomSprite;
     player.vx = 0;
     player.vy = 0;
-    player.speed = 2;
+    player.speed = 1.5;
 
     let bullets: CustomSprite[] = [];
 
@@ -79,11 +80,30 @@ export class Shooter extends React.Component {
       enemy.anchor.set(0.5, 0.5);
       enemy.width = 50;
       enemy.height = 50;
-      enemy.x = 0;
-      enemy.y = 0;
-      enemy.speed = 0.5;
-      enemy.deltaX = 0.02;
-      enemy.deltaY = 0.02;
+      const direction = _.random(3);
+      if(direction === 0) {
+        enemy.x = 0;
+        enemy.y = _.random(canvasH);
+      }
+      if(direction === 1) {
+        enemy.x = canvasW;
+        enemy.y = _.random(canvasH);
+      }
+      if(direction === 2) {
+        enemy.y = 0;
+        enemy.x = _.random(canvasW);
+      }
+      if(direction === 3) {
+        enemy.y = canvasH;
+        enemy.x = _.random(canvasW);
+      }
+      enemy.speed = 1.5 + _.random(2);
+      let angle = Math.atan2(enemy.y - player.y, enemy.x - player.x) / Math.PI * 180;
+      angle += 90;
+      enemy.vx = Math.sin(angle * (Math.PI / - 180)) * enemy.speed;
+      enemy.vy = Math.cos(angle * (Math.PI / - 180)) * enemy.speed;
+      // enemy.deltaX = 0.02;
+      // enemy.deltaY = 0.02;
       enemies.push(enemy);
       stage.addChild(enemy);
     }
@@ -91,7 +111,16 @@ export class Shooter extends React.Component {
     createEnemy();
     setInterval(() => {
       createEnemy();
-    }, 5000);
+    }, 1000);
+
+    setInterval(() => {
+      enemies.forEach((enemy) => {
+        let angle = Math.atan2(enemy.y - player.y, enemy.x - player.x) / Math.PI * 180;
+        angle += 90;
+        enemy.vx = Math.sin(angle * (Math.PI / - 180)) * enemy.speed;
+        enemy.vy = Math.cos(angle * (Math.PI / - 180)) * enemy.speed;
+      });
+    }, 2000);
 
     renderer.plugins.interaction.on('pointerup', (event: any) => {
       console.log(event.data.global.x.toFixed(2), event.data.global.y.toFixed(2), {
@@ -113,11 +142,8 @@ export class Shooter extends React.Component {
         y: clY
       }
       let angle = Math.atan2(bullet.y - bullet.pointTo.y, bullet.x - bullet.pointTo.x) / Math.PI * 180;
-      // angle = (angle < 0) ? angle + 360 : angle;
       angle += 90;
-      console.log('angle', angle);
-
-      bullet.speed = 2;
+      bullet.speed = 4;
 
       bullet.vx = Math.sin(angle * (Math.PI / - 180)) * bullet.speed;
       bullet.vy = Math.cos(angle * (Math.PI / - 180)) * bullet.speed;
@@ -182,8 +208,8 @@ export class Shooter extends React.Component {
 
     player.anchor.set(0.5, 0.5);
 
-    player.width = 50;
-    player.height = 50;
+    player.width = 30;
+    player.height = 30;
     player.x = 200;
     player.y = 200;
     player.rotation = 3;
@@ -207,7 +233,7 @@ export class Shooter extends React.Component {
 
         bull.x += bull.vx;
         bull.y += bull.vy;
-        if (bull.y > canvasH - 50 || bull.y < 50 || bull.x < 50 || bull.x > canvasW - 50) {
+        if (bull.y > canvasH || bull.y < 0 || bull.x < 0 || bull.x > canvasW) {
           stage.removeChild(bull);
           bullets.splice(key, 1);
         }
@@ -229,19 +255,23 @@ export class Shooter extends React.Component {
 
       });
 
-      enemies.forEach((enemy, key) => {
-        // enemy
-        enemy.deltaX += 0.05;
-        enemy.deltaY += 0.05;
-        enemy.x += Math.sin(enemy.deltaX) * 2;
-        enemy.y += Math.cos(enemy.deltaY) * 2;
-        enemy.x += enemy.speed;
-        enemy.y += enemy.speed;
+      // enemies.forEach((enemy, key) => {
+      //   // enemy
+      //   enemy.deltaX += 0.05;
+      //   enemy.deltaY += 0.05;
+      //   enemy.x += Math.sin(enemy.deltaX) * 2;
+      //   enemy.y += Math.cos(enemy.deltaY) * 2;
+      //   enemy.x += enemy.speed;
+      //   enemy.y += enemy.speed;
 
-        if (enemy.x > canvasH) {
-          stage.removeChild(enemy);
-          enemies.splice(key, 1);
-        }
+      //   if (enemy.x > canvasH) {
+      //     stage.removeChild(enemy);
+      //     enemies.splice(key, 1);
+      //   }
+      // });
+      enemies.forEach((enemy, key) => {
+        enemy.x += enemy.vx;
+        enemy.y += enemy.vy;
       });
     });
     ticker.start();
