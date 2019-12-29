@@ -70,7 +70,7 @@ export class Shooter extends React.Component {
 
     let bullets: CustomSprite[] = [];
 
-    const countEnemies = 3;
+    // const countEnemies = 3;
     let enemies: CustomSprite[] = [];
     // for (let i = 0; i < countEnemies; i += 1) {
     //   createEnemy()
