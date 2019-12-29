@@ -97,7 +97,7 @@ export class Shooter extends React.Component {
         enemy.y = canvasH;
         enemy.x = _.random(canvasW);
       }
-      enemy.speed = 1.5 + _.random(2);
+      enemy.speed = 0.5 + _.random(1);
       let angle = Math.atan2(enemy.y - player.y, enemy.x - player.x) / Math.PI * 180;
       angle += 90;
       enemy.vx = Math.sin(angle * (Math.PI / - 180)) * enemy.speed;
@@ -123,10 +123,10 @@ export class Shooter extends React.Component {
     }, 2000);
 
     renderer.plugins.interaction.on('pointerup', (event: any) => {
-      console.log(event.data.global.x.toFixed(2), event.data.global.y.toFixed(2), {
-        pX: player.x,
-        pY: player.y
-      });
+      // console.log(event.data.global.x.toFixed(2), event.data.global.y.toFixed(2), {
+      //   pX: player.x,
+      //   pY: player.y
+      // });
       const clX = event.data.global.x;
       const clY = event.data.global.y;
       const bullet = PIXI.Sprite.from(`coloredspheres/sphere-02.png`) as CustomSprite;
@@ -154,20 +154,19 @@ export class Shooter extends React.Component {
 
     window.addEventListener(
       "keydown", (event) => {
-        // console.log(event.keyCode);
-        if (event.key === 'ArrowUp') {
+        if (event.key === 'ArrowUp' || event.keyCode === 87) {
           player.vy = -player.speed;
           event.preventDefault();
         }
-        if (event.key === 'ArrowDown') {
+        if (event.key === 'ArrowDown' || event.keyCode === 83) {
           player.vy = player.speed;
           event.preventDefault();
         }
-        if (event.key === 'ArrowLeft') {
+        if (event.key === 'ArrowLeft' || event.keyCode === 65) {
           player.vx = -player.speed;
           event.preventDefault();
         }
-        if (event.key === 'ArrowRight') {
+        if (event.key === 'ArrowRight' || event.keyCode === 68) {
           player.vx = player.speed;
           event.preventDefault();
         }
@@ -187,19 +186,19 @@ export class Shooter extends React.Component {
     );
     window.addEventListener(
       "keyup", (event) => {
-        if (event.key === 'ArrowUp') {
+        if (event.key === 'ArrowUp' || event.keyCode === 87) {
           player.vy = 0;
           event.preventDefault();
         }
-        if (event.key === 'ArrowDown') {
+        if (event.key === 'ArrowDown'  || event.keyCode === 83) {
           player.vy = 0;
           event.preventDefault();
         }
-        if (event.key === 'ArrowLeft') {
+        if (event.key === 'ArrowLeft' || event.keyCode === 65) {
           player.vx = 0;
           event.preventDefault();
         }
-        if (event.key === 'ArrowRight') {
+        if (event.key === 'ArrowRight' || event.keyCode === 68) {
           player.vx = 0;
           event.preventDefault();
         }
