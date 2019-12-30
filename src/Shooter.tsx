@@ -29,6 +29,15 @@ export class Shooter extends React.Component {
     let linesY = 0;
     let linesX = 0;
     let lineStep = 25;
+
+    let line = new PIXI.Graphics();
+    line.lineStyle(1, 0xCCCCCC, 1);
+    line.moveTo(0, 0);
+    line.lineTo(canvasW, 0);
+    line.moveTo(0, 0);
+    line.lineTo(0, canvasH);
+    stage.addChild(line);
+
     while (linesY < canvasW) {
       linesY += lineStep;
       let line = new PIXI.Graphics();
@@ -72,11 +81,11 @@ export class Shooter extends React.Component {
       interaction: renderer.plugins.interaction // the interaction module is important for wheel to work properly when renderer.view is placed or scaled
     });
 
-    stage
-    .drag()
-    .pinch()
-    .wheel()
-    .decelerate()
+    // stage
+    // .drag()
+    // .pinch()
+    // .wheel()
+    // .decelerate()
 
     // const stage = new PIXI.Container();
     this.drawLinesBG(viewportW, viewportH, stage);
@@ -85,6 +94,14 @@ export class Shooter extends React.Component {
     player.vx = 0;
     player.vy = 0;
     player.speed = 1.5;
+
+    stage.x = 0;
+    stage.y = 0;
+
+    stage.follow(player, {
+      speed: 5,
+      radius: 120
+    });
 
     let bullets: CustomSprite[] = [];
 
@@ -126,10 +143,10 @@ export class Shooter extends React.Component {
       stage.addChild(enemy);
     }
 
-    createEnemy();
-    setInterval(() => {
-      createEnemy();
-    }, 30000);
+    // createEnemy();
+    // setInterval(() => {
+    //   createEnemy();
+    // }, 5000);
 
     setInterval(() => {
       enemies.forEach((enemy) => {
@@ -144,9 +161,12 @@ export class Shooter extends React.Component {
       // console.log(event.data.global.x.toFixed(2), event.data.global.y.toFixed(2), {
       //   pX: player.x,
       //   pY: player.y
+      // }, {
+      //   sX: stage.x,
+      //   sY: stage.y
       // });
-      const clX = event.data.global.x;
-      const clY = event.data.global.y;
+      const clX = event.data.global.x - stage.x;
+      const clY = event.data.global.y - stage.y;
       const bullet = PIXI.Sprite.from(`coloredspheres/sphere-02.png`) as CustomSprite;
       bullet.anchor.set(0.5, 0.5);
       bullet.x = player.x;
@@ -237,8 +257,23 @@ export class Shooter extends React.Component {
     ticker.add(() => {
       renderer.render(stage);
       player.rotation += 0.05;
-      player.y += player.vy;
-      player.x += player.vx;
+      if (player.y - player.height / 2 >= 0 && player.y + player.height / 2 <= viewportH
+        && player.x - player.width / 2 >= 0 && player.x + player.width / 2 <= viewportW) {
+        player.y += player.vy;
+        player.x += player.vx;
+        if (player.y - player.height / 2 < 0) {
+          player.y = player.height / 2;
+        }
+        if (player.x - player.width / 2 < 0) {
+          player.x = player.width / 2;
+        }
+        if (player.y + player.height / 2 > viewportH) {
+          player.y = viewportH - player.height / 2;
+        }
+        if (player.x + player.width / 2 > viewportW) {
+          player.x = viewportW - player.width / 2;
+        }
+      }
       // delta += 0.05;
       // player.scale.set(0.2 + Math.sin(delta) / 10)
       bullets.forEach((bull, key) => {
