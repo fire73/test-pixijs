@@ -2,6 +2,7 @@ import _ from 'lodash';
 import React from 'react';
 import './Shooter.css';
 import * as PIXI from 'pixi.js';
+import { Viewport } from 'pixi-viewport';
 
 interface CustomSprite extends PIXI.Sprite {
   vx: number;
@@ -47,9 +48,11 @@ export class Shooter extends React.Component {
   }
 
   componentDidMount() {
+    const viewportW = 2000;
+    const viewportH = 2000;
     const canvasW = window.innerWidth - 10;
     const canvasH = window.innerHeight - 10;
-    console.log(canvasW, canvasH);
+    // console.log(viewportW, viewportH);
     const canvas = document.getElementById('canvasGame');
     const renderer = new PIXI.Renderer({
       view: canvas as HTMLCanvasElement,
@@ -60,8 +63,23 @@ export class Shooter extends React.Component {
       transparent: true,
     });
 
-    const stage = new PIXI.Container();
-    this.drawLinesBG(canvasW, canvasH, stage);
+    const stage = new Viewport({
+      screenWidth: canvasW,
+      screenHeight: canvasH,
+      worldWidth: viewportW,
+      worldHeight: viewportH,
+
+      interaction: renderer.plugins.interaction // the interaction module is important for wheel to work properly when renderer.view is placed or scaled
+    });
+
+    stage
+    .drag()
+    .pinch()
+    .wheel()
+    .decelerate()
+
+    // const stage = new PIXI.Container();
+    this.drawLinesBG(viewportW, viewportH, stage);
 
     const player = PIXI.Sprite.from(`coloredspheres/sphere-01.png`) as CustomSprite;
     player.vx = 0;
@@ -81,21 +99,21 @@ export class Shooter extends React.Component {
       enemy.width = 50;
       enemy.height = 50;
       const direction = _.random(3);
-      if(direction === 0) {
+      if (direction === 0) {
         enemy.x = 0;
-        enemy.y = _.random(canvasH);
+        enemy.y = _.random(viewportH);
       }
-      if(direction === 1) {
-        enemy.x = canvasW;
-        enemy.y = _.random(canvasH);
+      if (direction === 1) {
+        enemy.x = viewportW;
+        enemy.y = _.random(viewportH);
       }
-      if(direction === 2) {
+      if (direction === 2) {
         enemy.y = 0;
-        enemy.x = _.random(canvasW);
+        enemy.x = _.random(viewportW);
       }
-      if(direction === 3) {
-        enemy.y = canvasH;
-        enemy.x = _.random(canvasW);
+      if (direction === 3) {
+        enemy.y = viewportH;
+        enemy.x = _.random(viewportW);
       }
       enemy.speed = 0.5 + _.random(1);
       let angle = Math.atan2(enemy.y - player.y, enemy.x - player.x) / Math.PI * 180;
@@ -111,7 +129,7 @@ export class Shooter extends React.Component {
     createEnemy();
     setInterval(() => {
       createEnemy();
-    }, 1000);
+    }, 30000);
 
     setInterval(() => {
       enemies.forEach((enemy) => {
@@ -190,7 +208,7 @@ export class Shooter extends React.Component {
           player.vy = 0;
           event.preventDefault();
         }
-        if (event.key === 'ArrowDown'  || event.keyCode === 83) {
+        if (event.key === 'ArrowDown' || event.keyCode === 83) {
           player.vy = 0;
           event.preventDefault();
         }
@@ -232,7 +250,7 @@ export class Shooter extends React.Component {
 
         bull.x += bull.vx;
         bull.y += bull.vy;
-        if (bull.y > canvasH || bull.y < 0 || bull.x < 0 || bull.x > canvasW) {
+        if (bull.y > viewportH || bull.y < 0 || bull.x < 0 || bull.x > viewportW) {
           stage.removeChild(bull);
           bullets.splice(key, 1);
         }
