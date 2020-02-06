@@ -89,7 +89,7 @@ export class Actors extends React.Component {
   render() {
     return <div className="Actors">
       <h3>yes: {this.state.statisticYes}</h3>
-      <div>
+      <div className="actorImg">
         <img src={`http://192.168.0.105:3300/img/small/${this.state.img}`} alt="actor" />
       </div>
       <div>
