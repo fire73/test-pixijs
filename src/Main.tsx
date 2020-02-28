@@ -3,6 +3,7 @@ import App from './App';
 import { ColorLines } from './ColorLines'
 import { Shooter } from './Shooter'
 import { Actors } from './actors_test/Actors'
+import { MagicBox } from './magic_box/MagicBox'
 import { Switch, Route, Link } from 'react-router-dom';
 
 class Home extends React.Component {
@@ -15,6 +16,7 @@ class Home extends React.Component {
             <li><Link to='/method-lee'>Method lee</Link></li>
             <li><Link to='/shooter'>Shooter</Link></li>
             <li><Link to='/actors'>Actors</Link></li>
+            <li><Link to='/magic-box'>Magic-box</Link></li>
           </ul>
         </nav>
       </div>
@@ -35,6 +37,7 @@ export class Main extends React.Component {
             <Route path='/method-lee' component={App} />
             <Route path='/shooter' component={Shooter} />
             <Route path='/actors' component={Actors} />
+            <Route path='/magic-box' component={MagicBox} />
           </Switch>
         </div>
       </div>
