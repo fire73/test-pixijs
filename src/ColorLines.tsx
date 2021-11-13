@@ -226,7 +226,7 @@ export class ColorLines extends React.Component {
               await new Promise((r) => {
                 tickerWay.add(() => {
                   if (foundBall.x === x && foundBall.y === y) {
-                    r();
+                    r(true);
                   }
                   if (foundBall.x < x) {
                     foundBall.x += speed;
