@@ -12,20 +12,20 @@ export class Match3 extends React.Component {
             width: 50,
             height: 50,
             animation: {
-                speed: 7,
+                speed: 2,
             }
         },
         levelSize: {
-            row: 5, // строка
-            col: 5, // столбец
+            row: 10, // строка
+            col: 10, // столбец
             spacing: 6,
         },
         levelMap: [
             ['11', '20', '11', '20', '20'],
             ['14', '11', '04', '11', '14'],
             ['11', '14', '20', '14', '11'],
-            ['20', '20', '11', '20', '11'],
-            ['14', '11', '20', '11', '14'],
+            ['20', '20', '20', '14', '11'],
+            ['14', '11', '04', '11', '14'],
         ],
     };
 
@@ -76,29 +76,6 @@ export class Match3 extends React.Component {
 
         const physics = new Physics(stage, balls, elementsMap, mapMaps, this.dimensions);
 
-        const _createBall = (x: number, y: number, color: undefined | string = undefined) => {
-            const listColors = ['11', '14', '20', '16', '04'];
-            const postfix = !color ? listColors[_.random(0, listColors.length - 1)] : color;
-            const ball = PIXI.Sprite.from(`coloredspheres/sphere-${postfix}.png`) as SpriteBall;
-
-            ball.color = postfix;
-
-            ball.x = x;
-            ball.y = y;
-
-            ball.buttonMode = true;
-            ball.interactive = true;
-
-            ball.width = this.dimensions.element.width;
-            ball.height = this.dimensions.element.height;
-            ball.zIndex = 2000;
-            ball.name = _.uniqueId();
-
-            ball.on('pointerdown', () => clickBall(this, ball));
-
-            return ball;
-        }
-
         async function clickBall(_this: Match3, ball: SpriteBall) {
             console.log('click', JSON.stringify({
                 map: ball.map,
@@ -115,7 +92,7 @@ export class Match3 extends React.Component {
                     // если второй клик по тому же элементу
                     ball.alpha = 1;
                     changeBalls.active = undefined;
-                    console.log('клиу уже был');
+                    console.log('клик уже был');
                     return;
                 }
 
@@ -239,106 +216,17 @@ export class Match3 extends React.Component {
                 if (combination.length >= 3) {
                     // ok
                     console.log('combination ok', combination.map(comb => comb.map));
-                    await physics.moveDown(combination, clickBall);
+                    await physics.moveDown(_.uniqBy(combination, 'name'), clickBall);
                 } else {
                     console.log('недостаточная комбинация', combination.map(c => c.map));
-                    await physics.swap(changeBalls.target, changeBalls.active);
+                    await physics.swap(changeBalls.target, changeBalls.active);    
                 }
-
                 changeBalls.active.alpha = 1;
                 changeBalls.target.alpha = 1;
                 changeBalls.active = undefined;
                 changeBalls.target = undefined;
+
             }
-        }
-
-        async function removeBall(_this: Match3, ball: SpriteBall) {
-            const thisBallIndex = balls.findIndex(_ball => _ball.map.x === ball.map.x && _ball.map.y === ball.map.y);
-
-            // Найти все вышестоящие элементы
-            // взять текущие координаты map
-            // фильтровать массив по map.x, где y < ball.y
-
-            const upBalls = balls
-                .filter((_ball) => _ball.map.x === ball.map.x && _ball.map.y < ball.map.y);
-
-            // изменить map.y у найденных
-            // const downBalls = balls
-            //     .filter((_ball) => _ball.map.x === ball.map.x && _ball.map.y > ball.map.y);
-
-            // 
-            // const downBallsCount = downBalls.length;
-
-            upBalls.forEach(_ball => {
-                const mapY = _ball.map.y + 1;
-                const elMap = mapMaps[`${_ball.map.x}_${mapY}`];
-                _ball.isNeedDraw = true;
-                _ball.map = {
-                    x: elMap._pX,
-                    y: elMap._pY,
-                };
-                // console.log('elMap', elMap.x, elMap.y, _ball.x, _ball.y);
-            });
-
-            console.log({
-                upBalls: upBalls.map(b => b.map),
-                thisBallIndex,
-                // downBalls: downBalls.map(b => b.map),
-            });
-
-            // создать нужное количество элементов за областью поля
-            // узнать, сколько элементов нужно создать
-            // пока что один
-
-            const newBall = physics.createBall(ball.x, -ball.height, clickBall);
-            newBall.map = {
-                x: ball.map.x,
-                y: 0,
-            };
-            newBall.isNeedDraw = true;
-
-            balls.push(newBall);
-            stage.addChild(newBall);
-
-            ball.destroy();
-            balls.splice(thisBallIndex, 1);
-
-            // пройтись по всем элементам и у кого есть флаг, то меняем позицию
-            const needDrawBalls = balls.filter(_ball => _ball.isNeedDraw === true);
-
-            const animationSpeed = _this.dimensions.element.animation.speed;
-
-            const tickerAnimBalls = new PIXI.Ticker();
-
-            await new Promise((r) => {
-                let doneAnim = 0;
-                tickerAnimBalls.add(() => {
-                    needDrawBalls.forEach(_ball => {
-                        const mapEl = physics.getMapByBall(_ball);
-                        if (_ball.y !== mapEl.y) {
-                            if (_ball.y < mapEl.y) {
-                                if (_ball.y + animationSpeed > mapEl.y) {
-                                    _ball.y = mapEl.y;
-                                } else {
-                                    _ball.y += animationSpeed;
-                                }
-                            }
-                        } else {
-                            doneAnim += 1;
-                            _ball.isNeedDraw = false;
-                        }
-                    });
-
-                    if (needDrawBalls.length === doneAnim) {
-                        r(true);
-                    }
-                });
-
-                tickerAnimBalls.start();
-            });
-
-            tickerAnimBalls.stop();
-            tickerAnimBalls.destroy();
         }
 
         function createElementMap(_this: Match3, x: number, y: number, i: number, j: number, colorBall: undefined | string = undefined) {
@@ -394,7 +282,7 @@ export class Match3 extends React.Component {
                     this.dimensions.element.width * i + (this.dimensions.levelSize.spacing * (i + 1)),
                     this.dimensions.element.height * j + (this.dimensions.levelSize.spacing * (j + 1)),
                     i, j,
-                    this.dimensions.levelMap[j][i]
+                    // this.dimensions.levelMap[j][i]
                 );
             }
         }

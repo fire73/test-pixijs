@@ -125,6 +125,10 @@ class Physics {
 
         combinationsBalls.forEach(_ball => {
             const index = this.findBallIndex(_ball);
+            if (index === -1) {
+                console.log('no index remove')
+                return;
+            }
             _ball.destroy();
             this.balls.splice(index, 1);
 
