@@ -2,23 +2,32 @@ import React from 'react';
 import * as PIXI from 'pixi.js'
 import './style.css';
 import _, { map, uniqueId } from 'lodash';
+import Physics from './physics';
+import { SpriteBall, SpriteMap, Dimensions } from './types';
 
 export class Match3 extends React.Component {
 
-    dimensions = {
+    dimensions: Dimensions = {
         element: {
             width: 50,
             height: 50,
             animation: {
-                speed: 10,
+                speed: 7,
             }
         },
         levelSize: {
-            row: 8, // строка
-            col: 8, // столбец
+            row: 5, // строка
+            col: 5, // столбец
             spacing: 6,
-        }
-    }
+        },
+        levelMap: [
+            ['11', '20', '11', '20', '20'],
+            ['14', '11', '04', '11', '14'],
+            ['11', '14', '20', '14', '11'],
+            ['20', '20', '11', '20', '11'],
+            ['14', '11', '20', '11', '14'],
+        ],
+    };
 
     levelHeight =
         this.dimensions.levelSize.row * this.dimensions.element.height +
@@ -29,6 +38,10 @@ export class Match3 extends React.Component {
         (this.dimensions.levelSize.spacing * this.dimensions.levelSize.col) + this.dimensions.levelSize.spacing;
 
     animationFall = true;
+
+    public balls: SpriteBall[] = [];
+
+    public stage = new PIXI.Container();
 
     componentDidMount() {
         const canvas = document.getElementById('canvasGame');
@@ -46,28 +59,12 @@ export class Match3 extends React.Component {
             transparent: true
         });
 
-        const stage = new PIXI.Container();
+        const stage = this.stage;
 
         const elementsMap: SpriteMap[] = [];
 
-
-        interface SpriteMap extends PIXI.Sprite {
-            _color: number;
-            _id: string;
-            _pX: number;
-            _pY: number;
-        }
-
-        interface SpriteBall extends PIXI.Sprite {
-            map: {
-                x: number;
-                y: number;
-            },
-            isNeedDraw: boolean,
-        }
-
         const mapMaps: { [key: string]: SpriteMap } = {};
-        const balls: SpriteBall[] = [];
+        const balls = this.balls;
 
         const changeBalls: {
             active: SpriteBall | undefined,
@@ -77,10 +74,14 @@ export class Match3 extends React.Component {
             target: undefined,
         };
 
-        const createBall = (x: number, y: number) => {
+        const physics = new Physics(stage, balls, elementsMap, mapMaps, this.dimensions);
+
+        const _createBall = (x: number, y: number, color: undefined | string = undefined) => {
             const listColors = ['11', '14', '20', '16', '04'];
-            const postfix = listColors[_.random(0, listColors.length - 1)];
+            const postfix = !color ? listColors[_.random(0, listColors.length - 1)] : color;
             const ball = PIXI.Sprite.from(`coloredspheres/sphere-${postfix}.png`) as SpriteBall;
+
+            ball.color = postfix;
 
             ball.x = x;
             ball.y = y;
@@ -98,24 +99,11 @@ export class Match3 extends React.Component {
             return ball;
         }
 
-        function getNearbyBalls(ball: SpriteBall): SpriteBall[] {
-            return balls.filter(_ball => {
-                return (
-                    // _ball.map.x === ball.map.x + 1
-                    // || _ball.map.x === ball.map.x - 1
-                    // || _ball.map.y === ball.map.y + 1
-                    // || _ball.map.y === ball.map.y - 1
-                    (_ball.map.x === ball.map.x + 1 && _ball.map.y === ball.map.y)
-                    || (_ball.map.x === ball.map.x - 1 && _ball.map.y === ball.map.y)
-                    || (_ball.map.y === ball.map.y + 1 && _ball.map.x === ball.map.x)
-                    || (_ball.map.y === ball.map.y - 1 && _ball.map.x === ball.map.x)
-                );
-            });
-        }
-
         async function clickBall(_this: Match3, ball: SpriteBall) {
-            console.log(`click ${ball.name}`);
-            // const thisBallIndex = balls.findIndex(_ball => _ball.map.x === ball.map.x && _ball.map.y === ball.map.y);
+            console.log('click', JSON.stringify({
+                map: ball.map,
+                name: ball.name
+            }));
 
             if (!changeBalls.active) {
                 // если это первый клик на элементе
@@ -127,15 +115,20 @@ export class Match3 extends React.Component {
                     // если второй клик по тому же элементу
                     ball.alpha = 1;
                     changeBalls.active = undefined;
+                    console.log('клиу уже был');
                     return;
                 }
 
                 // проверить, что клик по соседним элементам
-                const nearbyBalls = getNearbyBalls(changeBalls.active);
-                console.log({
-                    nearbyBalls,
-                })
+                const nearbyBalls = physics.getNearbyBalls(changeBalls.active);
                 let isNearby = false;
+
+                console.log('nearbyBalls', nearbyBalls.map(nb => {
+                    return {
+                        ...nb.map,
+                        name: nb.name,
+                    }
+                }));
 
                 for (const _ball of nearbyBalls) {
                     if (_ball.name === ball.name) {
@@ -148,125 +141,118 @@ export class Match3 extends React.Component {
                     changeBalls.active.alpha = 1;
                     changeBalls.active = undefined;
 
+                    console.log('клик не по соседнему элементу', ball.map, ball.name);
                     return;
                 }
+
 
                 changeBalls.target = ball;
                 ball.alpha = 0.3;
 
-                // поменять их map местами
-                const activeMap = { ...changeBalls.active.map };
-                const targetMap = { ...changeBalls.target.map };
+                await physics.swap(changeBalls.active, changeBalls.target);
 
-                changeBalls.active.map = targetMap;
-                changeBalls.target.map = activeMap;
+                await new Promise((r) => setTimeout(r, 200));
 
-                const tickerChangeBalls = new PIXI.Ticker();
+                // проверить на комбинацию
 
-                const animationSpeed = 5;
+                // взять текущие координаты map
+                // сравнить с color соседние по x элементы
+                // по двум change элементам 
 
-                await new Promise(r => {
-                    const mapElActive = getMapByBall(changeBalls.active as SpriteBall);
-                    const mapElTarget = getMapByBall(changeBalls.target as SpriteBall);
+                // changeBalls.active.map
 
-                    const activeBall = changeBalls.active as SpriteBall;
-                    const targetBall = changeBalls.target as SpriteBall;
-                    
-                    // let isDoneAnimate = false;
-                    tickerChangeBalls.add(() => {
-                        // x
-                        if (activeBall.x < mapElActive.x) {
-                            if (activeBall.x + animationSpeed > mapElActive.x) {
-                                activeBall.x = mapElActive.x;
-                            } else {
-                                activeBall.x += animationSpeed;
-                            }
-                        }
-                        
-                        if (activeBall.x > mapElActive.x) {
-                            if (activeBall.x - animationSpeed < mapElActive.x) {
-                                activeBall.x = mapElActive.x;
-                            } else {
-                                activeBall.x -= animationSpeed;
-                            }
-                        }
-                        // ----
-                        if (targetBall.x < mapElTarget.x) {
-                            if (targetBall.x + animationSpeed > mapElTarget.x) {
-                                targetBall.x = mapElTarget.x;
-                            } else {
-                                targetBall.x += animationSpeed;
-                            }
-                        }
-                        
-                        if (targetBall.x > mapElTarget.x) {
-                            if (targetBall.x - animationSpeed < mapElTarget.x) {
-                                targetBall.x = mapElTarget.x;
-                            } else {
-                                targetBall.x -= animationSpeed;
-                            }
-                        }
+                const combination = [];
 
-                        // y
-                        if (activeBall.y < mapElActive.y) {
-                            if (activeBall.y + animationSpeed > mapElActive.y) {
-                                activeBall.y = mapElActive.y;
-                            } else {
-                                activeBall.y += animationSpeed;
-                            }
-                        }
-                        
-                        if (activeBall.y > mapElActive.y) {
-                            if (activeBall.y - animationSpeed < mapElActive.y) {
-                                activeBall.y = mapElActive.y;
-                            } else {
-                                activeBall.y -= animationSpeed;
-                            }
-                        }
-                        // ----
-                        if (targetBall.y < mapElTarget.y) {
-                            if (targetBall.y + animationSpeed > mapElTarget.y) {
-                                targetBall.y = mapElTarget.y;
-                            } else {
-                                targetBall.y += animationSpeed;
-                            }
-                        }
-                        
-                        if (targetBall.y > mapElTarget.y) {
-                            if (targetBall.y - animationSpeed < mapElTarget.y) {
-                                targetBall.y = mapElTarget.y;
-                            } else {
-                                targetBall.y -= animationSpeed;
-                            }
-                        }
+                const ballsCheck = [
+                    changeBalls.active,
+                    changeBalls.target,
+                ];
 
-                        if (
-                            activeBall.x === mapElActive.x 
-                            && targetBall.x === mapElTarget.x
-                            && activeBall.y === mapElActive.y 
-                            && targetBall.y === mapElTarget.y
-                        ) {
-                            r(true);
+                for (const ballCheck of ballsCheck) {
+                    const combBallX = [];
+                    //  влево
+                    for (let ix = ballCheck.map.x - 1; ix >= 0; ix -= 1) {
+                        const founBall = balls.find(_ball => _ball.map.y === ballCheck?.map.y && _ball.map.x === ix);
+
+                        if (founBall?.color === ballCheck.color) {
+                            combBallX.push(founBall);
+                        } else {
+                            break;
                         }
-                    });
+                    }
 
-                    tickerChangeBalls.start();
-                });
+                    // вправо
+                    for (let ix = ballCheck.map.x + 1; ix <= _this.dimensions.levelSize.col; ix += 1) {
+                        const founBall = balls.find(_ball => _ball.map.y === ballCheck?.map.y && _ball.map.x === ix);
 
-                tickerChangeBalls.stop();
-                tickerChangeBalls.destroy();
+                        if (founBall?.color === ballCheck.color) {
+                            combBallX.push(founBall);
+                        } else {
+                            break;
+                        }
+                    }
+
+                    if (combBallX.length >= 2) {
+                        const comb = [...combBallX];
+                        // console.log(ballCheck.name, comb.map(c => c.map));
+                        combination.push(...comb);
+                    }
+
+                    const combBallY = [];
+
+                    //  вверх
+                    for (let iy = ballCheck.map.y - 1; iy >= 0; iy -= 1) {
+                        const founBall = balls.find(_ball => _ball.map.y === iy && _ball.map.x === ballCheck?.map.x);
+
+                        if (founBall?.color === ballCheck.color) {
+                            combBallY.push(founBall);
+                        } else {
+                            break;
+                        }
+                    }
+
+                    // вниз
+                    for (let iy = ballCheck.map.y + 1; iy <= _this.dimensions.levelSize.row; iy += 1) {
+                        const founBall = balls.find(_ball => _ball.map.y === iy && _ball.map.x === ballCheck?.map.x);
+
+                        if (founBall?.color === ballCheck.color) {
+                            combBallY.push(founBall);
+                        } else {
+                            break;
+                        }
+                    }
+
+                    console.log('Y комбинация', combBallY.map(c => c.map));
+                    if (combBallY.length >= 2) {
+                        const comb = [...combBallY];
+                        combination.push(...comb);
+                    }
+
+                    if (combBallX.length >= 2 || combBallY.length >= 2) {
+                        combination.push(ballCheck);
+                        // console.log(ballCheck.name, comb.map(c => c.map));
+                    }
+
+
+                }
+
+                if (combination.length >= 3) {
+                    // ok
+                    console.log('combination ok', combination.map(comb => comb.map));
+                    await physics.moveDown(combination, clickBall);
+                } else {
+                    console.log('недостаточная комбинация', combination.map(c => c.map));
+                    await physics.swap(changeBalls.target, changeBalls.active);
+                }
 
                 changeBalls.active.alpha = 1;
                 changeBalls.target.alpha = 1;
                 changeBalls.active = undefined;
                 changeBalls.target = undefined;
             }
-
-            console.log(changeBalls);
-
         }
 
-        async function _clickBall(_this: Match3, ball: SpriteBall) {
+        async function removeBall(_this: Match3, ball: SpriteBall) {
             const thisBallIndex = balls.findIndex(_ball => _ball.map.x === ball.map.x && _ball.map.y === ball.map.y);
 
             // Найти все вышестоящие элементы
@@ -304,7 +290,7 @@ export class Match3 extends React.Component {
             // узнать, сколько элементов нужно создать
             // пока что один
 
-            const newBall = createBall(ball.x, -ball.height);
+            const newBall = physics.createBall(ball.x, -ball.height, clickBall);
             newBall.map = {
                 x: ball.map.x,
                 y: 0,
@@ -328,7 +314,7 @@ export class Match3 extends React.Component {
                 let doneAnim = 0;
                 tickerAnimBalls.add(() => {
                     needDrawBalls.forEach(_ball => {
-                        const mapEl = getMapByBall(_ball);
+                        const mapEl = physics.getMapByBall(_ball);
                         if (_ball.y !== mapEl.y) {
                             if (_ball.y < mapEl.y) {
                                 if (_ball.y + animationSpeed > mapEl.y) {
@@ -355,11 +341,7 @@ export class Match3 extends React.Component {
             tickerAnimBalls.destroy();
         }
 
-        function getMapByBall(ball: SpriteBall) {
-            return mapMaps[`${ball.map.x}_${ball.map.y}`];
-        }
-
-        function createElementMap(_this: Match3, x: number, y: number, i: number, j: number) {
+        function createElementMap(_this: Match3, x: number, y: number, i: number, j: number, colorBall: undefined | string = undefined) {
             // 11 14 20 16
             // const listColors = ['11', '14', '20', '16', '04'];
             // const randomImgPostfix = _.random(0, 2);
@@ -395,7 +377,7 @@ export class Match3 extends React.Component {
             stage.addChild(elementMap);
             elementsMap.push(elementMap);
 
-            const ball = createBall(x, y);
+            const ball = physics.createBall(x, y, clickBall, colorBall);
             ball.map = {
                 x: i,
                 y: j,
@@ -411,10 +393,15 @@ export class Match3 extends React.Component {
                     this,
                     this.dimensions.element.width * i + (this.dimensions.levelSize.spacing * (i + 1)),
                     this.dimensions.element.height * j + (this.dimensions.levelSize.spacing * (j + 1)),
-                    i, j
+                    i, j,
+                    this.dimensions.levelMap[j][i]
                 );
             }
         }
+
+        // this.dimensions.levelMap.forEach(elRow => {
+
+        // });
 
         balls.forEach(ball => {
             stage.addChild(ball);
@@ -425,6 +412,15 @@ export class Match3 extends React.Component {
         ticker.start();
     }
 
+    test() {
+        console.log(this.balls.map(ball => {
+            return {
+                name: ball.name,
+                map: ball.map,
+            }
+        }));
+    }
+
     animate(renderer: PIXI.Renderer, stage: PIXI.Container) {
         renderer.render(stage);
     }
@@ -432,6 +428,9 @@ export class Match3 extends React.Component {
     render() {
         return <div className="Match3">
             <canvas id="canvasGame"></canvas>
+            <div>
+                <button onClick={this.test.bind(this)}>test</button>
+            </div>
         </div>
     }
 }
