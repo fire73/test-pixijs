@@ -9,16 +9,16 @@ export class Match3 extends React.Component {
 
     dimensions: Dimensions = {
         element: {
-            width: 50,
-            height: 50,
+            width: 40,
+            height: 40,
             animation: {
-                speed: 2,
+                speed: 7,
             }
         },
         levelSize: {
             row: 10, // строка
             col: 10, // столбец
-            spacing: 6,
+            spacing: 2,
         },
         levelMap: [
             ['11', '20', '11', '20', '20'],
@@ -128,7 +128,7 @@ export class Match3 extends React.Component {
 
                 await physics.swap(changeBalls.active, changeBalls.target);
 
-                await new Promise((r) => setTimeout(r, 200));
+                // await new Promise((r) => setTimeout(r, 200));
 
                 // проверить на комбинацию
 
@@ -216,13 +216,15 @@ export class Match3 extends React.Component {
                 if (combination.length >= 3) {
                     // ok
                     console.log('combination ok', combination.map(comb => comb.map));
+                    changeBalls.active.alpha = 1;
+                    changeBalls.target.alpha = 1;
                     await physics.moveDown(_.uniqBy(combination, 'name'), clickBall);
                 } else {
                     console.log('недостаточная комбинация', combination.map(c => c.map));
-                    await physics.swap(changeBalls.target, changeBalls.active);    
+                    await physics.swap(changeBalls.target, changeBalls.active);
+                    changeBalls.active.alpha = 1;
+                    changeBalls.target.alpha = 1;
                 }
-                changeBalls.active.alpha = 1;
-                changeBalls.target.alpha = 1;
                 changeBalls.active = undefined;
                 changeBalls.target = undefined;
 
@@ -247,6 +249,7 @@ export class Match3 extends React.Component {
             elementMap.y = y;
             elementMap.buttonMode = true;
             elementMap.interactive = true;
+            elementMap.alpha = 0;
             // elementMap.name = `map_${elements.length + 1}`;
             elementMap.name = `${x}_${y}`;
             elementMap.zIndex = 3000;
